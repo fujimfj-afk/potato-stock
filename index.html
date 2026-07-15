@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポテト在庫管理システム</title>
+<style>
+:root {
+--primary-color: #344955;
+--secondary-color: #F9AA33;
+--bg-color: #F4F6F7;
+--in-color: #2E7D32;
+--out-color: #C62828;
+--dmg-color: #D35400;
+}
+*, *::before, *::after { box-sizing: border-box; } body {
+font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+background-color: var(--bg-color);
+margin: 0;
+padding: 10px;
+color: #333;
+}
+.container { max-width: 500px; margin: 0 auto; } .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 12px; }
+
+/* 1. 倉庫作業者エリア */
+.operator-zone { border: 3px solid var(--secondary-color); } .btn-group { display: flex; gap: 6px; margin-bottom: 12px; } .btn-type { flex: 1; padding: 12px 6px; font-size: 14px; font-weight: bold; border: 2px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; white-space: nowrap; } .btn-type.active-in { background: var(--in-color); color: white; border-color: var(--in-color); } .btn-type.active-out { background: var(--out-color); color: white; border-color: var(--out-color); } .btn-type.active-dmg { background: var(--dmg-color); color: white; border-color: var(--dmg-color); } .form-group { margin-bottom: 12px; } label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: var(--primary-color); } input, select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; } .btn-submit { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 8px; } .btn-tmp { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; background: #7F8C8D; color: white; border: none; border-radius: 6px; cursor: pointer; }
+
+/* 保存待ちドラフト表示枠 */
+.draft-zone { background-color: #FEF9E7; border: 1px dashed #F39C12; padding: 10px; border-radius: 4px; margin-bottom: 12px; } .draft-title { font-size: 13px; font-weight: bold; color: #D35400; margin-bottom: 8px; } .draft-table { width: 100%; font-size: 13px; border-collapse: collapse; background: white; } .draft-table th, .draft-table td { border: 1px solid #FADBD8; padding: 6px; text-align: center; } .draft-table th { background-color: #F9E79F; color: #7D6608; }
+
+/* 2. 在庫数＆合計在庫数 */
+.total-stock { font-size: 22px; font-weight: bold; color: var(--primary-color); text-align: center; background: #EAECEE; padding: 10px; border-radius: 4px; margin-bottom: 12px; } table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; } th, td { border: 1px solid #D0D3D4; padding: 10px; text-align: center; } th { background-color: var(--primary-color); color: white; } .alert-row { background-color: #FCF3CF; font-weight: bold; }
+
+/* 3. 終了報告（最終チェック） */
+.leader-zone { border: 2px solid #4A6572; background-color: #F2F4F4; } .tmp-list-title { font-size: 13px; font-weight: bold; color: #2C3E50; margin-top: 5px; margin-bottom: 5px; } .btn-close-day { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; background: #D35400; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; } .btn-view-log { width: 100%; padding: 12px; font-size: 14px; font-weight: bold; background: #566573; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 8px; }
+
+.btn-mini { padding: 4px 8px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; border-radius: 3px; margin: 0 2px; } .btn-mini-edit { background: #2980B9; color: white; } .btn-mini-delete { background: #C62828; color: white; }
+
+/* 4. 管理者メニュー */
+.admin-zone { background-color: #EAEDED; border-top: 3px dashed #7F8C8D; margin-top: 20px; } .btn-admin-toggle { background: #566573; color: white; padding: 10px; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; } .admin-content { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #bdc3c7; } .log-table { font-size: 12px; width: 100%; margin-top: 10px; } .log-table th { background-color: #566573; } .btn-download { background: #2E7D32; color: white; padding: 10px; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 15px; } </style> </head> <body>
+
+<div class="container">
+
+<div class="card operator-zone">
+<h3 style="margin:0 0 12px 0; color:var(--primary-color); text-align:center;">① 入出庫入力</h3>
+<div class="btn-group">
+<button type="button" class="btn-type active-in" id="btnIn" onclick="setMode('入庫')">📥 入庫</button>
+<button type="button" class="btn-type" id="btnOut" onclick="setMode('出庫')">📤 出庫</button>
+<button type="button" class="btn-type" id="btnDmg" onclick="setMode('ダメージ')">⚠ ダメージ</button>
+</div>
+
+<div class="form-group" id="expiryCalGroup">
+<label>賞味期限（カレンダーから選択）</label>
+<input type="date" id="expiryCal">
+</div>
+
+<div class="form-group" id="expirySelectGroup" style="display:none;">
+<label>対象の賞味期限（リストから選択）</label>
+<select id="expirySelect">
+</select>
+</div>
+
+<div class="form-group" id="expiryAutoGroup" style="display:none;">
+<label>賞味期限</label>
+<input type="text" id="expiryAutoText" value="自動割当（古い順）" disabled style="background-color: #EAECEE; color: #7F8C8D;"> </div>
+
+<div class="form-group">
+<label>数量（ケース数）</label>
+<input type="number" id="quantity" placeholder="ケース数を入力" min="1"> </div> <button type="button" class="btn-submit" onclick="addRecord()">追加する</button>
+
+<div class="draft-zone">
+<div class="draft-title">🗂️ 保存待ちデータ（未送信・手元キープ中）：</div>
+<div id="draftListContainer">
+<span style="font-size:13px; color:#7f8c8d;">まだ追加されたデータはありません。</span>
+</div>
+</div>
+
+<button type="button" class="btn-tmp" onclick="saveToCloud()">💾 チェック者に送る（全体共有）</button>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 10px 0; font-size:16px;">② 現在の倉庫在庫状況</h3>
+<div class="total-stock">合計在庫数: <span id="totalStockNum">1,100</span> ケース</div>
+<table>
+<thead>
+<tr><th>賞味期限（古い順）</th><th>現在の残り</th></tr>
+</thead>
+<tbody id="inventoryTableBody">
+</tbody>
+</table>
+</div>
+
+<div class="card leader-zone">
+<h3 style="margin:0 0 10px 0; font-size:16px;">③ 終了報告（最終チェック）</h3>
+
+<div class="tmp-list-title">👥 クラウド一時保存中のデータ（引き継ぎ・チェック用）：</div>
+<table>
+<thead>
+<tr><th style="background-color:#4A6572;">区分</th><th style="background-color:#4A6572;">賞味期限</th><th style="background-color:#4A6572;">数量</th><th style="background-color:#4A6572;">操作</th></tr>
+</thead>
+<tbody id="leaderCheckTableBody">
+<tr><td colspan="4" style="color:#7f8c8d; background:#fff;">一時保存されたデータはまだありません</td></tr>
+</tbody>
+</table>
+
+<div style="background:#fff; border:1px solid #bdc3c7; padding:10px; border-radius:4px; margin-top:12px; font-size:13px;"> <div style="font-weight:bold; color:var(--primary-color); margin-bottom:6px;">📊 今回の確定による在庫数の変化（予測）：</div>
+<div id="leaderPredictionArea" style="line-height:1.6; color:#555;">
+データが送信されると変化が表示されます
+</div>
+</div>
+
+<div class="form-group" style="margin-top: 15px;">
+<label>最終チェック者</label>
+<select id="checkerName">
+<option value="">-- チェック者を選択 --</option> <option value="木之瀬">木之瀬</option>
+<option value="若林">若林</option>
+<option value="清水">清水</option>
+<option value="嶋田">嶋田</option>
+</select>
+</div>
+<button type="button" class="btn-close-day" onclick="closeBusiness()">🔒 業務終了（データを一括確定）</button>
+<button type="button" class="btn-view-log" onclick="viewLogWithoutPassword()">📄 送信済みのログを確認する</button>
+</div>
+
+<div class="card admin-zone">
+<button type="button" class="btn-admin-toggle" id="adminMenuBtn" onclick="toggleAdminMenu()">🛠️ ④ 管理者メニュー（データ修正・ログ確認）</button>
+<div class="admin-content" id="adminContent"> <p style="margin:0 0 10px 0; font-size:12px; color:#e67e22; font-weight:bold;">※ここは管理者・事務方のみが使用するエリアです。</p>
+
+<button type="button" class="btn-download" id="btnDownloadCSV" onclick="downloadCSV()">📄 ログデータをCSVでダウンロード</button>
+
+<h4 style="margin:0;">入出庫ログ（最新1,000件・最新が一番上）</h4>
+<div id="logCount" style="font-size:11px; color:#666; margin-bottom:5px;">表示件数: 0件 / 最大1000件</div>
+<table class="log-table">
+<thead>
+<tr><th>日時</th><th>区分</th><th>賞味期限</th><th>数量</th><th>チェック者</th></tr>
+</thead>
+<tbody id="adminLogTableBody">
+<tr><td colspan="5" style="color:#7f8c8d; background:#fff; text-align:center;">確定されたログはまだありません</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<script>
+let currentMode = '入庫';
+let localDraftList = [];
+let cloudSharedList = [];
+let isAdminMode = false;
+
+let currentInventory = [
+{ expiry: "2027/04/01", qty: 200, isOldest: true }, { expiry: "2027/05/01", qty: 500, isOldest: false }, { expiry: "2027/06/15", qty: 400, isOldest: false } ];
+
+let adminLogList = [
+{ datetime: "07/08 16:00", mode: "入庫", expiry: "2027/06/15", qty: 400, checker: "清水" } ];
+
+function setMode(mode) {
+currentMode = mode;
+const btnIn = document.getElementById('btnIn'); const btnOut = document.getElementById('btnOut');
+const btnDmg = document.getElementById('btnDmg');
+const expiryCalGroup = document.getElementById('expiryCalGroup');
+const expirySelectGroup = document.getElementById('expirySelectGroup');
+const expiryAutoGroup = document.getElementById('expiryAutoGroup');
+
+btnIn.className = 'btn-type'; btnOut.className = 'btn-type'; btnDmg.className = 'btn-type';
+
+if (mode === '入庫') {
+btnIn.className = 'btn-type active-in';
+expiryCalGroup.style.display = 'block';
+expirySelectGroup.style.display = 'none'; expiryAutoGroup.style.display = 'none'; } else if (mode === '出庫') { btnOut.className = 'btn-type active-out'; expiryCalGroup.style.display = 'none'; expirySelectGroup.style.display = 'none'; expiryAutoGroup.style.display = 'block'; } else if (mode === 'ダメージ') { btnDmg.className = 'btn-type active-dmg'; expiryCalGroup.style.display = 'none'; expirySelectGroup.style.display = 'block'; expiryAutoGroup.style.display = 'none'; updateExpiryDropdown(); } }
+
+function updateExpiryDropdown() {
+const select = document.getElementById('expirySelect');
+select.innerHTML = '';
+
+let dates = new Set();
+localDraftList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); }); cloudSharedList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); }); currentInventory.forEach(inv => { if(inv.qty > 0) dates.add(inv.expiry); });
+
+let sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
+
+select.options[0] = new Option("-- 選択してください --", ""); sortedDates.forEach(date => { let label = date; let isCurrentDraft = localDraftList.some(i => i.expiry === date) || cloudSharedList.some(i => i.expiry === date); let isRealStock = currentInventory.some(i => i.expiry === date && i.qty > 0);
+
+if(isCurrentDraft && isRealStock) label += " (本日入力 & 在庫あり)";
+else if(isCurrentDraft) label += " (さっき入力した日付)";
+else if(isRealStock) label += " (現在の倉庫在庫)";
+
+select.options[select.options.length] = new Option(label, date); }); }
+
+function addRecord() {
+const qty = parseInt(document.getElementById('quantity').value);
+if (!qty || qty <= 0) { alert('数量を入力してください'); return; }
+
+let expiry = "";
+if (currentMode === '入庫') {
+expiry = document.getElementById('expiryCal').value;
+if (!expiry) { alert('賞味期限を確認してください'); return; } expiry = expiry.replace(/-/g, '/'); } else if (currentMode === 'ダメージ') { expiry = document.getElementById('expirySelect').value;
+if (!expiry || expiry === "") { alert('賞味期限を選択してください'); return; } } else if (currentMode === '出庫') { expiry = "自動割当（古い順）";
+}
+
+localDraftList.push({ mode: currentMode, expiry: expiry, qty: qty }); document.getElementById('quantity').value = ''; updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
+
+function updateDraftDisplay() {
+const container = document.getElementById('draftListContainer');
+if (localDraftList.length === 0) {
+container.innerHTML = '<span style="font-size:13px; color:#7f8c8d;">まだ追加されたデータはありません。</span>';
+return;
+}
+
+let totalIn = 0, totalOut = 0, totalDmg = 0; localDraftList.forEach(item => { if(item.mode === '入庫') totalIn += item.qty; if(item.mode === '出庫') totalOut += item.qty; if(item.mode === 'ダメージ') totalDmg += item.qty; });
+
+let html = '<table class="draft-table" style="margin-bottom:10px;"><thead><tr><th>区分</th><th>賞味期限</th><th>数量</th><th>操作</th></tr></thead><tbody>';
+localDraftList.forEach((item, index) => { let modeLabel = item.mode; if(item.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
+if(item.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
+html += `<tr>
+<td><strong>${modeLabel}</strong></td>
+<td>${item.expiry}</td>
+<td>${item.qty}箱</td>
+<td>
+<button class="btn-mini btn-mini-edit" onclick="editDraftItem(${index})">修正</button>
+<button class="btn-mini btn-mini-delete" onclick="deleteDraftItem(${index})">削除</button>
+</td>
+</tr>`;
+});
+html += '</tbody></table>';
+
+html += `<div style="font-size:12px; font-weight:bold; color:#333; margin-bottom:12px; background:#fff; padding:5px; border:1px solid #ccc; border-radius:3px;">`; html += ` 現在の入力合計 ➔ 入庫: <span style="color:var(--in-color);">${totalIn}</span> 箱 / 出庫: <span style="color:var(--out-color);">${totalOut}</span> 箱 / ダメージ: <span style="color:var(--dmg-color);">${totalDmg}</span> 箱`;
+html += `</div>`;
+
+let calcInventory = JSON.parse(JSON.stringify(currentInventory));
+localDraftList.forEach(item => {
+if (item.mode === '入庫') {
+let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty += item.qty; } else { calcInventory.push({ expiry: item.expiry, qty: item.qty, isOldest: false }); } } else if (item.mode === '出庫') { let checkQty = item.qty; for (let i = 0; i < calcInventory.length; i++) { if (calcInventory[i].qty > 0) { if (calcInventory[i].qty >= checkQty) { calcInventory[i].qty -= checkQty; checkQty = 0; break; } else { checkQty -= calcInventory[i].qty; calcInventory[i].qty = 0; } } } } else if (item.mode === 'ダメージ') { let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty = Math.max(0, exist.qty - item.qty); } } });
+
+calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry)); let foundOldest = false; calcInventory.forEach(inv => { inv.isOldest = false; if (inv.qty > 0 && !foundOldest) { inv.isOldest = true; foundOldest = true; } });
+
+let calcTotal = calcInventory.reduce((sum, inv) => sum + inv.qty, 0);
+
+html += `<div class="draft-title" style="margin-top:10px; color:#2C3E50;">📊 送信後の予測在庫（棚卸確認用）：</div>`;
+html += `<table class="draft-table"><thead><tr style="background-color:#BDC3C7;"><th style="background-color:#AEB6BF; color:#2C3E50;">賞味期限</th><th style="background-color:#AEB6BF; color:#2C3E50;">予測残り</th></tr></thead><tbody>`;
+calcInventory.forEach(inv => {
+let rowStyle = inv.isOldest ? ' style="background-color:#FCF3CF; font-weight:bold;"' : ''; html += `<tr${rowStyle}><td>${inv.expiry} ${inv.isOldest ? '(最古)' : ''}</td><td>${inv.qty} ケース</td></tr>`;
+});
+html += `<tr style="background:#EAECEE; font-weight:bold;"><td style="text-align:right;">予測合計:</td><td>${calcTotal} ケース</td></tr>`;
+html += '</tbody></table>';
+
+container.innerHTML = html;
+}
+
+function editDraftItem(index) {
+const item = localDraftList[index];
+const newQty = prompt(`【手元データ修正】数量（ケース数）を修正してください:`, item.qty); if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { localDraftList[index].qty = parsedQty; updateDraftDisplay(); } } } function deleteDraftItem(index) { localDraftList.splice(index, 1); updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
+
+function saveToCloud() {
+if(localDraftList.length === 0 && cloudSharedList.length === 0) { alert('追加されたデータがありません。'); return; }
+
+let calcInventory = JSON.parse(JSON.stringify(currentInventory));
+let processedList = [];
+
+localDraftList.forEach(item => {
+if (item.mode === '入庫' || item.mode === 'ダメージ') { processedList.push(item); let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { if(item.mode === '入庫') exist.qty += item.qty; if(item.mode === 'ダメージ') exist.qty = Math.max(0, exist.qty - item.qty); } else if(item.mode === '入庫') { calcInventory.push({ expiry: item.expiry, qty: item.qty }); } } });
+
+localDraftList.forEach(item => {
+if (item.mode === '出庫') {
+let checkQty = item.qty;
+calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry)); for (let i = 0; i < calcInventory.length; i++) { if (calcInventory[i].qty > 0) { if (calcInventory[i].qty >= checkQty) { processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: checkQty }); calcInventory[i].qty -= checkQty; checkQty = 0; break; } else { processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: calcInventory[i].qty }); checkQty -= calcInventory[i].qty; calcInventory[i].qty = 0; } } } if (checkQty > 0) { processedList.push({ mode: '出庫', expiry: calcInventory[0] ? calcInventory[0].expiry : "未特定", qty: checkQty }); } } });
+
+cloudSharedList = cloudSharedList.concat(processedList);
+localDraftList = [];
+updateDraftDisplay();
+updateLeaderTable();
+alert('データをチェック者画面へ送信しました！');
+}
+
+function updateLeaderTable() {
+const tbody = document.getElementById('leaderCheckTableBody');
+if (cloudSharedList.length === 0) {
+tbody.innerHTML = '<tr><td colspan="4" style="color:#7f8c8d; background:#fff;">一時保存されたデータはまだありません</td></tr>';
+document.getElementById('leaderPredictionArea').innerHTML = "データが送信されると変化が表示されます";
+return;
+}
+tbody.innerHTML = '';
+cloudSharedList.forEach((item, index) => { let row = tbody.insertRow(); row.style.background = "#fff"; let modeLabel = item.mode; if(item.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
+if(item.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
+row.insertCell(0).innerHTML = modeLabel; row.insertCell(1).innerText = item.expiry; row.insertCell(2).innerText = item.qty + " ケース";
+let actionCell = row.insertCell(3);
+actionCell.innerHTML = `<button class="btn-mini btn-mini-edit" onclick="editSharedItem(${index})">修正</button><button class="btn-mini btn-mini-delete" onclick="deleteSharedItem(${index})">削除</button>`;
+});
+
+calculateLeaderPrediction();
+}
+
+function editSharedItem(index) {
+const item = cloudSharedList[index];
+const newQty = prompt(`${item.expiry} の数量を修正します:`, item.qty); if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { cloudSharedList[index].qty = parsedQty; updateLeaderTable(); } } } function deleteSharedItem(index) { if (confirm('削除してよろしいですか？')) { cloudSharedList.splice(index, 1); updateLeaderTable(); } }
+
+function calculateLeaderPrediction() {
+const area = document.getElementById('leaderPredictionArea');
+let calcInventory = JSON.parse(JSON.stringify(currentInventory));
+let totalDmg = 0;
+
+cloudSharedList.forEach(item => {
+if (item.mode === '入庫') {
+let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty += item.qty; } else { calcInventory.push({ expiry: item.expiry, qty: item.qty }); } } else if (item.mode === '出庫' || item.mode === 'ダメージ') { let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty = Math.max(0, exist.qty - item.qty); } if (item.mode === 'ダメージ') totalDmg += item.qty; } });
+
+let html = "";
+let beforeTotal = currentInventory.reduce((sum, i) => sum + i.qty, 0); let afterTotal = 0;
+
+calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry)); calcInventory.forEach(inv => { if(inv.qty > 0 || currentInventory.some(i => i.expiry === inv.expiry)) { let beforeItem = currentInventory.find(i => i.expiry === inv.expiry); let beforeQty = beforeItem ? beforeItem.qty : 0; afterTotal += inv.qty; let diff = inv.qty - beforeQty; let diffStr = diff > 0 ? `<span style="color:var(--in-color); font-weight:bold;">(📈 +${diff})</span>` : (diff < 0 ? `<span style="color:var(--out-color); font-weight:bold;">(📉 ${diff})</span>` : '(±0)'); html += `・${inv.expiry} 残り: ${beforeQty} ケース ➔ ${inv.qty} ケース ${diffStr}<br>`; } });
+
+let totalDiff = 
