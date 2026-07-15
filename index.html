@@ -163,19 +163,31 @@ const expiryCalGroup = document.getElementById('expiryCalGroup');
 const expirySelectGroup = document.getElementById('expirySelectGroup');
 const expiryAutoGroup = document.getElementById('expiryAutoGroup');
 
-btnIn.className = 'btn-type'; btnOut.className = 'btn-type'; btnDmg.className = 'btn-type';
+if(!btnIn || !btnOut || !btnDmg) return;
+
+btnIn.className = 'btn-type';
+btnOut.className = 'btn-type';
+btnDmg.className = 'btn-type';
 
 if (mode === '入庫') {
 btnIn.className = 'btn-type active-in';
-expiryCalGroup.style.display = 'block';
-expirySelectGroup.style.display = 'none'; expiryAutoGroup.style.display = 'none'; } else if (mode === '出庫') { btnOut.className = 'btn-type active-out'; expiryCalGroup.style.display = 'none'; expirySelectGroup.style.display = 'none'; expiryAutoGroup.style.display = 'block'; } else if (mode === 'ダメージ') { btnDmg.className = 'btn-type active-dmg'; expiryCalGroup.style.display = 'none'; expirySelectGroup.style.display = 'block'; expiryAutoGroup.style.display = 'none'; updateExpiryDropdown(); } }
+if(expiryCalGroup) expiryCalGroup.style.display = 'block';
+if(expirySelectGroup) expirySelectGroup.style.display = 'none';
+if(expiryAutoGroup) expiryAutoGroup.style.display = 'none'; } else if (mode === '出庫') { btnOut.className = 'btn-type active-out';
+if(expiryCalGroup) expiryCalGroup.style.display = 'none';
+if(expirySelectGroup) expirySelectGroup.style.display = 'none';
+if(expiryAutoGroup) expiryAutoGroup.style.display = 'block'; } else if (mode === 'ダメージ') { btnDmg.className = 'btn-type active-dmg';
+if(expiryCalGroup) expiryCalGroup.style.display = 'none';
+if(expirySelectGroup) expirySelectGroup.style.display = 'block';
+if(expiryAutoGroup) expiryAutoGroup.style.display = 'none'; updateExpiryDropdown(); } }
 
 function updateExpiryDropdown() {
 const select = document.getElementById('expirySelect');
+if(!select) return;
 select.innerHTML = '';
 
 let dates = new Set();
-localDraftList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); }); cloudSharedList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); }); currentInventory.forEach(inv => { if(inv.qty > 0) dates.add(inv.expiry); });
+localDraftList.forEach(item => { if(item.expiry && item.expiry.includes('/')) dates.add(item.expiry); }); cloudSharedList.forEach(item => { if(item.expiry && item.expiry.includes('/')) dates.add(item.expiry); }); currentInventory.forEach(inv => { if(inv.qty > 0) dates.add(inv.expiry); });
 
 let sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
 
@@ -188,20 +200,23 @@ else if(isRealStock) label += " (現在の倉庫在庫)";
 select.options[select.options.length] = new Option(label, date); }); }
 
 function addRecord() {
-const qty = parseInt(document.getElementById('quantity').value);
-if (!qty || qty <= 0) { alert('数量を入力してください'); return; }
+const qtyInput = document.getElementById('quantity');
+const qty = parseInt(qtyInput.value);
+if (!qty || qty <= 0) { alert('数量を正しく入力してください'); return; }
 
 let expiry = "";
 if (currentMode === '入庫') {
-expiry = document.getElementById('expiryCal').value;
-if (!expiry) { alert('賞味期限を確認してください'); return; } expiry = expiry.replace(/-/g, '/'); } else if (currentMode === 'ダメージ') { expiry = document.getElementById('expirySelect').value;
-if (!expiry || expiry === "") { alert('賞味期限を選択してください'); return; } } else if (currentMode === '出庫') { expiry = "自動割当（古い順）";
+const calVal = document.getElementById('expiryCal').value;
+if (!calVal) { alert('賞味期限を入力してください'); return; } expiry = calVal.replace(/-/g, '/'); } else if (currentMode === 'ダメージ') { expiry = document.getElementById('expirySelect').value;
+if (!expiry || expiry === "") { alert('賞味期限をリストから選択してください'); return; } } else if (currentMode === '出庫') { expiry = "自動割当（古い順）";
 }
 
-localDraftList.push({ mode: currentMode, expiry: expiry, qty: qty }); document.getElementById('quantity').value = ''; updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
+localDraftList.push({ mode: currentMode, expiry: expiry, qty: qty }); qtyInput.value = ''; updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
 
 function updateDraftDisplay() {
 const container = document.getElementById('draftListContainer');
+if(!container) return;
+
 if (localDraftList.length === 0) {
 container.innerHTML = '<span style="font-size:13px; color:#7f8c8d;">まだ追加されたデータはありません。</span>';
 return;
@@ -239,73 +254,4 @@ let calcTotal = calcInventory.reduce((sum, inv) => sum + inv.qty, 0);
 html += `<div class="draft-title" style="margin-top:10px; color:#2C3E50;">📊 送信後の予測在庫（棚卸確認用）：</div>`;
 html += `<table class="draft-table"><thead><tr style="background-color:#BDC3C7;"><th style="background-color:#AEB6BF; color:#2C3E50;">賞味期限</th><th style="background-color:#AEB6BF; color:#2C3E50;">予測残り</th></tr></thead><tbody>`;
 calcInventory.forEach(inv => {
-let rowStyle = inv.isOldest ? ' style="background-color:#FCF3CF; font-weight:bold;"' : ''; html += `<tr${rowStyle}><td>${inv.expiry} ${inv.isOldest ? '(最古)' : ''}</td><td>${inv.qty} ケース</td></tr>`;
-});
-html += `<tr style="background:#EAECEE; font-weight:bold;"><td style="text-align:right;">予測合計:</td><td>${calcTotal} ケース</td></tr>`;
-html += '</tbody></table>';
-
-container.innerHTML = html;
-}
-
-function editDraftItem(index) {
-const item = localDraftList[index];
-const newQty = prompt(`【手元データ修正】数量（ケース数）を修正してください:`, item.qty); if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { localDraftList[index].qty = parsedQty; updateDraftDisplay(); } } } function deleteDraftItem(index) { localDraftList.splice(index, 1); updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
-
-function saveToCloud() {
-if(localDraftList.length === 0 && cloudSharedList.length === 0) { alert('追加されたデータがありません。'); return; }
-
-let calcInventory = JSON.parse(JSON.stringify(currentInventory));
-let processedList = [];
-
-localDraftList.forEach(item => {
-if (item.mode === '入庫' || item.mode === 'ダメージ') { processedList.push(item); let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { if(item.mode === '入庫') exist.qty += item.qty; if(item.mode === 'ダメージ') exist.qty = Math.max(0, exist.qty - item.qty); } else if(item.mode === '入庫') { calcInventory.push({ expiry: item.expiry, qty: item.qty }); } } });
-
-localDraftList.forEach(item => {
-if (item.mode === '出庫') {
-let checkQty = item.qty;
-calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry)); for (let i = 0; i < calcInventory.length; i++) { if (calcInventory[i].qty > 0) { if (calcInventory[i].qty >= checkQty) { processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: checkQty }); calcInventory[i].qty -= checkQty; checkQty = 0; break; } else { processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: calcInventory[i].qty }); checkQty -= calcInventory[i].qty; calcInventory[i].qty = 0; } } } if (checkQty > 0) { processedList.push({ mode: '出庫', expiry: calcInventory[0] ? calcInventory[0].expiry : "未特定", qty: checkQty }); } } });
-
-cloudSharedList = cloudSharedList.concat(processedList);
-localDraftList = [];
-updateDraftDisplay();
-updateLeaderTable();
-alert('データをチェック者画面へ送信しました！');
-}
-
-function updateLeaderTable() {
-const tbody = document.getElementById('leaderCheckTableBody');
-if (cloudSharedList.length === 0) {
-tbody.innerHTML = '<tr><td colspan="4" style="color:#7f8c8d; background:#fff;">一時保存されたデータはまだありません</td></tr>';
-document.getElementById('leaderPredictionArea').innerHTML = "データが送信されると変化が表示されます";
-return;
-}
-tbody.innerHTML = '';
-cloudSharedList.forEach((item, index) => { let row = tbody.insertRow(); row.style.background = "#fff"; let modeLabel = item.mode; if(item.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
-if(item.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
-row.insertCell(0).innerHTML = modeLabel; row.insertCell(1).innerText = item.expiry; row.insertCell(2).innerText = item.qty + " ケース";
-let actionCell = row.insertCell(3);
-actionCell.innerHTML = `<button class="btn-mini btn-mini-edit" onclick="editSharedItem(${index})">修正</button><button class="btn-mini btn-mini-delete" onclick="deleteSharedItem(${index})">削除</button>`;
-});
-
-calculateLeaderPrediction();
-}
-
-function editSharedItem(index) {
-const item = cloudSharedList[index];
-const newQty = prompt(`${item.expiry} の数量を修正します:`, item.qty); if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { cloudSharedList[index].qty = parsedQty; updateLeaderTable(); } } } function deleteSharedItem(index) { if (confirm('削除してよろしいですか？')) { cloudSharedList.splice(index, 1); updateLeaderTable(); } }
-
-function calculateLeaderPrediction() {
-const area = document.getElementById('leaderPredictionArea');
-let calcInventory = JSON.parse(JSON.stringify(currentInventory));
-let totalDmg = 0;
-
-cloudSharedList.forEach(item => {
-if (item.mode === '入庫') {
-let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty += item.qty; } else { calcInventory.push({ expiry: item.expiry, qty: item.qty }); } } else if (item.mode === '出庫' || item.mode === 'ダメージ') { let exist = calcInventory.find(inv => inv.expiry === item.expiry); if (exist) { exist.qty = Math.max(0, exist.qty - item.qty); } if (item.mode === 'ダメージ') totalDmg += item.qty; } });
-
-let html = "";
-let beforeTotal = currentInventory.reduce((sum, i) => sum + i.qty, 0); let afterTotal = 0;
-
-calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry)); calcInventory.forEach(inv => { if(inv.qty > 0 || currentInventory.some(i => i.expiry === inv.expiry)) { let beforeItem = currentInventory.find(i => i.expiry === inv.expiry); let beforeQty = beforeItem ? beforeItem.qty : 0; afterTotal += inv.qty; let diff = inv.qty - beforeQty; let diffStr = diff > 0 ? `<span style="color:var(--in-color); font-weight:bold;">(📈 +${diff})</span>` : (diff < 0 ? `<span style="color:var(--out-color); font-weight:bold;">(📉 ${diff})</span>` : '(±0)'); html += `・${inv.expiry} 残り: ${beforeQty} ケース ➔ ${inv.qty} ケース ${diffStr}<br>`; } });
-
-let totalDiff = 
+let rowStyle = inv.isOldest ? ' style="background-color:#FCF3CF; font-weight:bold;"' : ''; html += `<tr${rowStyle}><td>${inv.expiry
