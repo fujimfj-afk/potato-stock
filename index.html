@@ -673,7 +673,6 @@ const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwM82gB25la1XKI
 
 
 function closeBusiness() {
-  // ⭕ 【バグ修正】URLが未設定のときだけローカルテストモードに分岐するように修正しました
   if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
     alert("【テスト用通知】\n現在GASのURLが未設定のためメール送信はスキップしますが、画面上の確定シミュレーション処理を実行します。");
     executeLocalClose();
@@ -691,23 +690,33 @@ function closeBusiness() {
     return { datetime: timeStr, mode: item.mode, expiry: item.expiry, qty: item.qty, checker: name };
   });
 
+  // ぐるぐる（ローディング）の代わりに、ボタンを連打できないよう無効化
+  const closeBtn = document.querySelector('.btn-close-day');
+  if(closeBtn) {
+    closeBtn.disabled = true;
+    closeBtn.innerText = "⏳ 送信中...";
+  }
+
   fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify(uploadData) })
-    .then(response => response.json())
-    .then(result => {
-      if(result.status === "success") {
-        finalizeInventory(uploadData);
-        alert(name + ' さんが確認しました。\nGoogleスプレッドシートへの一括確定送信、および管理者へのメール報告が完了しました！');
-        cloudSharedList = [];
-        updateInventoryDisplay();
-        updateLeaderTable();
-        updateAdminLogTable();
-      } else {
-        alert('送信エラーが発生しました。インターネット接続を確認してください。');
-      }
+    .then(() => {
+      // 💡 GASからの返事の内容（JSONかテキストか）を無視し、通信が到達した時点で成功とみなす
+      finalizeInventory(uploadData);
+      alert(name + ' さんが確認しました。\nGoogleスプレッドシートへの一括確定送信が完了しました！');
+      cloudSharedList = [];
+      updateInventoryDisplay();
+      updateLeaderTable();
+      updateAdminLogTable();
     })
     .catch(error => {
       console.error('Error:', error);
-      alert('通信に失敗しました。URLの設定等を確認してください。');
+      alert('通信そのものに失敗しました。インターネット接続やURLの設定を確認してください。');
+    })
+    .finally(() => {
+      // ボタンの状態を元に戻す
+      if(closeBtn) {
+        closeBtn.disabled = false;
+        closeBtn.innerText = "🔒 業務終了（データを一括確定）";
+      }
     });
 }
 
