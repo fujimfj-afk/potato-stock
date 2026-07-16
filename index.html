@@ -1,845 +1,874 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポテト在庫管理システム</title>
-<style>
-:root {
-  --primary-color: #344955;
-  --secondary-color: #F9AA33;
-  --bg-color: #F4F6F7;
-  --in-color: #2E7D32;
-  --out-color: #C62828;
-  --dmg-color: #D35400;
-}
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-body {
-  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-  background-color: var(--bg-color);
-  margin: 0;
-  padding: 10px;
-  color: #333;
-}
-.container {
-  max-width: 500px;
-  margin: 0 auto;
-}
-.card {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 12px;
-}
-.operator-zone {
-  border: 3px solid var(--secondary-color);
-}
-.btn-group {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.btn-type {
-  flex: 1;
-  padding: 12px 6px;
-  font-size: 14px;
-  font-weight: bold;
-  border: 2px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-type.active-in {
-  background: var(--in-color);
-  color: white;
-  border-color: var(--in-color);
-}
-.btn-type.active-out {
-  background: var(--out-color);
-  color: white;
-  border-color: var(--out-color);
-}
-.btn-type.active-dmg {
-  background: var(--dmg-color);
-  color: white;
-  border-color: var(--dmg-color);
-}
-.form-group {
-  margin-bottom: 12px;
-}
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: var(--primary-color);
-}
-input, select {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.btn-submit {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: bold;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 8px;
-}
-.btn-tmp {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: bold;
-  background: #7F8C8D;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.draft-zone {
-  background-color: #FEF9E7;
-  border: 1px dashed #F39C12;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-.draft-title {
-  font-size: 13px;
-  font-weight: bold;
-  color: #D35400;
-  margin-bottom: 8px;
-}
-.draft-table {
-  width: 100%;
-  font-size: 13px;
-  border-collapse: collapse;
-  background: white;
-}
-.draft-table th, .draft-table td {
-  border: 1px solid #FADBD8;
-  padding: 6px;
-  text-align: center;
-}
-.draft-table th {
-  background-color: #F9E79F;
-  color: #7D6608;
-}
-.total-stock {
-  font-size: 22px;
-  font-weight: bold;
-  color: var(--primary-color);
-  text-align: center;
-  background: #EAECEE;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-  font-size: 14px;
-}
-th, td {
-  border: 1px solid #D0D3D4;
-  padding: 10px;
-  text-align: center;
-}
-th {
-  background-color: var(--primary-color);
-  color: white;
-}
-.alert-row {
-  background-color: #FCF3CF;
-  font-weight: bold;
-}
-.leader-zone {
-  border: 2px solid #4A6572;
-  background-color: #F2F4F4;
-}
-.tmp-list-title {
-  font-size: 13px;
-  font-weight: bold;
-  color: #2C3E50;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-.btn-close-day {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: bold;
-  background: #D35400;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-.btn-view-log {
-  width: 100%;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: bold;
-  background: #566573;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-.btn-mini {
-  padding: 4px 8px;
-  font-size: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  border: none;
-  border-radius: 3px;
-  margin: 0 2px;
-}
-.btn-mini-edit {
-  background: #2980B9;
-  color: white;
-}
-.btn-mini-delete {
-  background: #C62828;
-  color: white;
-}
-.admin-zone {
-  background-color: #EAEDED;
-  border-top: 3px dashed #7F8C8D;
-  margin-top: 20px;
-}
-.btn-admin-toggle {
-  background: #566573;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-}
-.admin-content {
-  display: none;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #bdc3c7;
-}
-.log-table {
-  font-size: 12px;
-  width: 100%;
-  margin-top: 10px;
-}
-.log-table th {
-  background-color: #566573;
-}
-.btn-download {
-  background: #2E7D32;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-  margin-bottom: 15px;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポテト在庫システム（テスト版）</title>
+  <style>
+    /* 全体共通デザイン */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #fff;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: #e67e22;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+      position: relative;
+    }
+    .back-btn {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .content {
+      padding: 15px;
+      flex: 1;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .card-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      border-left: 4px solid #e67e22;
+      padding-left: 8px;
+      color: #2c3e50;
+    }
+    
+    /* ボタンデザイン */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background-color: #e67e22;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+    .btn:active {
+      background-color: #d35400;
+    }
+    .btn-secondary {
+      background-color: #7f8c8d;
+    }
+    .btn-secondary:active {
+      background-color: #2c3e50;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      width: auto;
+      display: inline-block;
+      margin: 2px;
+    }
+
+    /* フォーム周り */
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+
+    /* テーブルデザイン */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+
+    /* ステータスバッジのデザイン */
+    .badge {
+      display: inline-block;
+      padding: 3px 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 4px;
+    }
+    .badge-pending {
+      background-color: #ffe6d5;
+      color: #d35400;
+      border: 1px solid #ffccab;
+    }
+    .badge-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    /* 在庫ダッシュボード用 */
+    .stock-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .summary-box {
+      background: #fdf2e9;
+      border: 1px solid #f5cba7;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .summary-box.total {
+      grid-column: span 2;
+      background: #ebf5fb;
+      border: 1px solid #a9dfbf;
+    }
+    .large-num {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #e67e22;
+    }
+    .summary-box.total .large-num {
+      color: #27ae60;
+    }
+
+    /* ログ履歴リストのスタイル */
+    .log-list {
+      max-height: 180px;
+      overflow-y: auto;
+      background: #fafafa;
+      border: 1px dashed #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    .log-item {
+      border-bottom: 1px solid #eee;
+      padding: 4px 0;
+    }
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    /* ユーティリティ */
+    .hidden {
+      display: none !important;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
+<div class="app-container">
+  
+  <header id="app-header">
+    <button class="back-btn hidden" id="back-button" onclick="goBack()">◀ メニューに戻る</button>
+    <span id="header-title">ポテト在庫システム（テスト版）</span>
+  </header>
 
-  <div class="card operator-zone">
-    <h3 style="margin:0 0 12px 0; color:var(--primary-color); text-align:center;">① 入出庫入力</h3>
-    <div class="btn-group">
-      <button type="button" class="btn-type active-in" id="btnIn" onclick="setMode('入庫')">📥 入庫</button>
-      <button type="button" class="btn-type" id="btnOut" onclick="setMode('出庫')">📤 出庫</button>
-      <button type="button" class="btn-type" id="btnDmg" onclick="setMode('ダメージ')">⚠ ダメージ</button>
+  <div class="content">
+    
+    <div id="alert-msg" class="alert-success hidden"></div>
+
+    <div id="view-menu" class="view">
+      <button class="btn" onclick="switchView('view-driver')">📦 1. 在庫確認・ダメージ報告</button>
+      <button class="btn" onclick="switchView('view-leader')">👥 2. 最終チェック（リーダー用）</button>
+      <button class="btn btn-secondary" onclick="switchView('view-admin-auth')">🔑 3. 管理者メニュー</button>
     </div>
 
-    <div class="form-group" id="expiryCalGroup">
-      <label>賞味期限（カレンダーから選択）</label>
-      <input type="date" id="expiryCal">
-    </div>
+    <div id="view-driver" class="view hidden">
+      <div class="card">
+        <div class="card-title">■ 📊 本日の引当後在庫</div>
+        <div class="stock-summary">
+          <div class="summary-box">
+            <div>📥 本日の総入庫量</div>
+            <div class="large-num" id="driver-sum-in">+0</div>
+          </div>
+          <div class="summary-box">
+            <div>📤 本日の総出庫量</div>
+            <div class="large-num" id="driver-sum-out">-0</div>
+          </div>
+          <div class="summary-box total">
+            <div>現在の引当後総在庫</div>
+            <div class="large-num" id="driver-total-stock">500 ケース</div>
+            <div style="font-size: 0.8rem; color:#666;" id="driver-start-stock">(本日開始時: 510 ケース)</div>
+          </div>
+        </div>
 
-    <div class="form-group" id="expirySelectGroup" style="display:none;">
-      <label>対象の賞味期限（リストから選択）</label>
-      <select id="expirySelect"></select>
-    </div>
+        <div style="font-weight: bold; font-size: 0.9rem; margin-top: 15px;">▼ 賞味期限ごとの引当・増減内訳</div>
+        <table>
+          <thead>
+            <tr>
+              <th>賞味期限</th>
+              <th>現在庫</th>
+            </tr>
+          </thead>
+          <tbody id="driver-stock-table-body">
+            </tbody>
+        </table>
+      </div>
 
-    <div class="form-group" id="expiryAutoGroup" style="display:none;">
-      <label>賞味期限</label>
-      <input type="text" id="expiryAutoText" value="自動割当（古い順）" disabled style="background-color: #EAECEE; color: #7F8C8D;">
-    </div>
+      <div class="card">
+        <div class="card-title">⚠️ ダメージ報告入力</div>
+        
+        <div class="form-group">
+          <label>(1) 賞味期限（ダメージ品）</label>
+          <select class="form-control" id="dmg-target-date" onchange="syncReplenishDate()">
+            </select>
+        </div>
 
-    <div class="form-group">
-      <label>数量（ケース数）</label>
-      <input type="number" id="quantity" placeholder="ケース数を入力" min="1">
-    </div>
-    <button type="button" class="btn-submit" onclick="addRecord()">追加する</button>
+        <div class="form-group">
+          <label>(2) 数量 (ケース)</label>
+          <input type="number" class="form-control" id="dmg-qty" value="10" min="1">
+        </div>
 
-    <div class="draft-zone">
-      <div class="draft-title">🗂️ 保存待ちデータ（未送信・手元キープ中）：</div>
-      <div id="draftListContainer">
-        <span style="font-size:13px; color:#7f8c8d;">まだ追加されたデータはありません。</span>
+        <div class="form-group">
+          <label>(3) 補充の賞味期限</label>
+          <select class="form-control" id="dmg-rep-date">
+            </select>
+        </div>
+
+        <button class="btn" onclick="submitDamageReport()">📤 ダメージ報告を登録する</button>
       </div>
     </div>
 
-    <button type="button" class="btn-tmp" onclick="saveToCloud()">💾 チェック者に送る（全体共有）</button>
-  </div>
+    <div id="view-leader" class="view hidden">
+      <div class="card">
+        <div class="card-title">■ 確定待ちデータ</div>
+        <table>
+          <thead>
+            <tr>
+              <th>状態</th>
+              <th>区分</th>
+              <th>賞味期限</th>
+              <th>数量</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="leader-pending-body">
+            </tbody>
+        </table>
+      </div>
 
-  <div class="card">
-    <h3 style="margin:0 0 10px 0; font-size:16px;">② 現在の倉庫在庫状況</h3>
-    <div class="total-stock">合計在庫数: <span id="totalStockNum">1,100</span> ケース</div>
-    <table>
-      <thead>
-        <tr><th>賞味期限（古い順）</th><th>現在の残り</th></tr>
-      </thead>
-      <tbody id="inventoryTableBody"></tbody>
-    </table>
-  </div>
+      <button class="btn" onclick="commitLeaderData()">🔒 データを確定（業務終了）</button>
+      
+      <button class="btn btn-secondary" onclick="toggleHistory()">⏳ これまでの確定履歴を表示する</button>
 
-  <div class="card leader-zone">
-    <h3 style="margin:0 0 10px 0; font-size:16px;">③ 終了報告（最終チェック）</h3>
-    <div class="tmp-list-title">👥 クラウド一時保存中のデータ（引き継ぎ・チェック用）：</div>
-    <table>
-      <thead>
-        <tr>
-          <th style="background-color:#4A6572;">区分</th>
-          <th style="background-color:#4A6572;">賞味期限</th>
-          <th style="background-color:#4A6572;">数量</th>
-          <th style="background-color:#4A6572;">操作</th>
-        </tr>
-      </thead>
-      <tbody id="leaderCheckTableBody">
-        <tr><td colspan="4" style="color:#7f8c8d; background:#fff;">一時保存されたデータはまだありません</td></tr>
-      </tbody>
-    </table>
-
-    <div style="background:#fff; border:1px solid #bdc3c7; padding:10px; border-radius:4px; margin-top:12px; font-size:13px;">
-      <div style="font-weight:bold; color:var(--primary-color); margin-bottom:6px;">📊 今回の確定による在庫数の変化（予測）：</div>
-      <div id="leaderPredictionArea" style="line-height:1.6; color:#555;">
-        データが送信されると変化が表示されます
+      <div class="card hidden" id="history-section">
+        <div class="card-title">📋 確定履歴一覧（本日処理したもの）</div>
+        <table>
+          <thead>
+            <tr>
+              <th>状態</th>
+              <th>確定日時</th>
+              <th>区分</th>
+              <th>賞味期限</th>
+              <th>数量</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body">
+            </tbody>
+        </table>
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 15px;">
-      <label>最終チェック者</label>
-      <select id="checkerName">
-        <option value="">-- チェック者を選択 --</option>
-        <option value="木之瀬">木之瀬</option>
-        <option value="若林">若林</option>
-        <option value="清水">清水</option>
-        <option value="嶋田">嶋田</option>
-      </select>
+    <div id="view-admin-auth" class="view hidden">
+      <div class="card">
+        <div class="card-title">🔑 パスワード認証</div>
+        <div class="form-group">
+          <input type="password" class="form-control" id="admin-pass" placeholder="パスワードを入力 (1234)">
+        </div>
+        <button class="btn" onclick="unlockAdmin()">🔓 ロック解除</button>
+      </div>
     </div>
-    <button type="button" class="btn-close-day" onclick="closeBusiness()">🔒 業務終了（データを一括確定）</button>
-    <button type="button" class="btn-view-log" onclick="viewLogWithoutPassword()">📄 送信済みのログを確認する</button>
-  </div>
 
-  <div class="card admin-zone">
-    <button type="button" class="btn-admin-toggle" id="adminMenuBtn" onclick="toggleAdminMenu()">🛠️ ④ 管理者メニュー（データ修正・ログ確認）</button>
-    <div class="admin-content" id="adminContent">
-      <p style="margin:0 0 10px 0; font-size:12px; color:#e67e22; font-weight:bold;">※ここは管理者・事務方のみが使用するエリアです。</p>
-      <button type="button" class="btn-download" id="btnDownloadCSV" onclick="downloadCSV()">📄 ログデータをCSVでダウンロード</button>
-      <h4 style="margin:0;">入出庫ログ（最新1,000件・最新が一番上）</h4>
-      <div id="logCount" style="font-size:11px; color:#666; margin-bottom:5px;">表示件数: 0件 / 最大1000件</div>
-      <table class="log-table">
-        <thead>
-          <tr><th>日時</th><th>区分</th><th>賞味期限</th><th>数量</th><th>チェック者</th></tr>
-        </thead>
-        <tbody id="adminLogTableBody">
-          <tr><td colspan="5" style="color:#7f8c8d; background:#fff; text-align:center;">確定されたログはまだありません</td></tr>
-        </tbody>
-      </table>
+    <div id="view-admin-main" class="view hidden">
+      
+      <div class="card">
+        <div class="card-title">📥📤 本日の入出庫 登録・変更</div>
+        
+        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">【 手動で1件ずつ入力 】</div>
+        <div class="form-group">
+          <label>(1) 区分</label>
+          <div class="radio-group">
+            <label><input type="radio" name="admin-io-type" value="入庫" checked> 入庫</label>
+            <label><input type="radio" name="admin-io-type" value="出庫"> 出庫</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>(2) 賞味期限</label>
+          <select class="form-control" id="admin-io-date">
+            </select>
+        </div>
+        <div class="form-group">
+          <label>(3) 数量</label>
+          <input type="number" class="form-control" id="admin-io-qty" value="100" min="1">
+        </div>
+        <button class="btn btn-sm" onclick="submitAdminManual()">➕ 登録する</button>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">【 コピペで一括登録 】</div>
+        <div class="form-group">
+          <textarea class="form-control" id="admin-paste-area" rows="4" placeholder="賞味期限[タブ]区分[タブ]数量 のように貼り付け"></textarea>
+        </div>
+        <button class="btn btn-sm" onclick="submitAdminPaste()">📋 一括登録を実行</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💾 データ管理</div>
+        <button class="btn" onclick="downloadCSV()">📥 CSVファイルでダウンロード</button>
+        <button class="btn btn-secondary" style="background:#c0392b;" onclick="resetLocalStorage()">⚠️ テストデータをすべて初期化する</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✏️ 確定データ修正</div>
+        <table>
+          <thead>
+            <tr>
+              <th>区分</th>
+              <th>賞味期限</th>
+              <th>数量</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="admin-modify-body">
+            </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📜 管理者システムログ（操作履歴）</div>
+        <div class="log-list" id="admin-log-list">
+          <div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>
+        </div>
+      </div>
+
     </div>
-  </div>
 
+  </div>
 </div>
 
 <script>
-let currentMode = '入庫';
-let localDraftList = [];
-let cloudSharedList = [];
-let isAdminMode = false;
+  // ==================== データの読み込み・保存 (localStorage) ====================
+  const defaultStartStock = {
+    "2027/04/01": 10,
+    "2027/05/01": 500,
+    "2027/06/15": 0
+  };
 
-// 初期の倉庫内在庫マスターデータ（サンプル）
-let currentInventory = [
-  { expiry: "2027/04/01", qty: 200, isOldest: true },
-  { expiry: "2027/05/01", qty: 500, isOldest: false },
-  { expiry: "2027/06/15", qty: 400, isOldest: false }
-];
+  const defaultCommitHistory = [
+    { time: "07/16 11:30", type: "ダメージ", date: "2027/04/01", qty: 10 },
+    { time: "07/16 11:30", type: "代替出庫", date: "2027/05/01", qty: 10 }
+  ];
 
-// 管理者用ログ（初期サンプル）
-let adminLogList = [
-  { datetime: "07/08 16:00", mode: "入庫", expiry: "2027/06/15", qty: 400, checker: "清水" }
-];
+  let startStock = loadData("startStock", defaultStartStock);
+  let transactions = loadData("transactions", []);
+  let commitHistory = loadData("commitHistory", defaultCommitHistory);
+  let systemLogs = loadData("systemLogs", []); // 管理者操作ログ用配列
 
-function setMode(mode) {
-  currentMode = mode;
-  const btnIn = document.getElementById('btnIn');
-  const btnOut = document.getElementById('btnOut');
-  const btnDmg = document.getElementById('btnDmg');
-  const expiryCalGroup = document.getElementById('expiryCalGroup');
-  const expirySelectGroup = document.getElementById('expirySelectGroup');
-  const expiryAutoGroup = document.getElementById('expiryAutoGroup');
+  let viewHistory = ['view-menu'];
 
-  btnIn.className = 'btn-type'; btnOut.className = 'btn-type'; btnDmg.className = 'btn-type';
-
-  if (mode === '入庫') {
-    btnIn.className = 'btn-type active-in';
-    expiryCalGroup.style.display = 'block';
-    expirySelectGroup.style.display = 'none';
-    expiryAutoGroup.style.display = 'none';
-  } else if (mode === '出庫') {
-    btnOut.className = 'btn-type active-out';
-    expiryCalGroup.style.display = 'none';
-    expirySelectGroup.style.display = 'none';
-    expiryAutoGroup.style.display = 'block';
-  } else if (mode === 'ダメージ') {
-    btnDmg.className = 'btn-type active-dmg';
-    expiryCalGroup.style.display = 'none';
-    expirySelectGroup.style.display = 'block';
-    expiryAutoGroup.style.display = 'none';
-    updateExpiryDropdown();
-  }
-}
-
-function updateExpiryDropdown() {
-  const select = document.getElementById('expirySelect');
-  if(!select) return;
-  select.innerHTML = '';
-
-  let dates = new Set();
-  localDraftList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); });
-  cloudSharedList.forEach(item => { if(item.expiry && item.expiry.match(/^\d{4}/)) dates.add(item.expiry); });
-  currentInventory.forEach(inv => { if(inv.qty > 0) dates.add(inv.expiry); });
-
-  let sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
-
-  select.options[0] = new Option("-- 選択してください --", "");
-  sortedDates.forEach(date => {
-    let label = date;
-    let isCurrentDraft = localDraftList.some(i => i.expiry === date) || cloudSharedList.some(i => i.expiry === date);
-    let isRealStock = currentInventory.some(i => i.expiry === date && i.qty > 0);
-
-    if(isCurrentDraft && isRealStock) label += " (本日入力 & 在庫あり)";
-    else if(isCurrentDraft) label += " (さっき入力した日付)";
-    else if(isRealStock) label += " (現在の倉庫在庫)";
-
-    select.options[select.options.length] = new Option(label, date);
-  });
-}
-
-function addRecord() {
-  const qty = parseInt(document.getElementById('quantity').value);
-  if (!qty || qty <= 0) { alert('数量を入力してください'); return; }
-
-  let expiry = "";
-  if (currentMode === '入庫') {
-    expiry = document.getElementById('expiryCal').value;
-    if (!expiry) { alert('賞味期限を確認してください'); return; }
-    expiry = expiry.replace(/-/g, '/');
-  } else if (currentMode === 'ダメージ') {
-    expiry = document.getElementById('expirySelect').value;
-    if (!expiry || expiry === "") { alert('賞味期限を選択してください'); return; }
-  } else if (currentMode === '出庫') {
-    expiry = "自動割当（古い順）";
-  }
-
-  localDraftList.push({ mode: currentMode, expiry: expiry, qty: qty });
-  document.getElementById('quantity').value = '';
-  updateDraftDisplay();
-  if(currentMode === 'ダメージ') updateExpiryDropdown();
-}
-
-function updateDraftDisplay() {
-  const container = document.getElementById('draftListContainer');
-  if (localDraftList.length === 0) {
-    container.innerHTML = '<span style="font-size:13px; color:#7f8c8d;">まだ追加されたデータはありません。</span>';
-    return;
-  }
-
-  let totalIn = 0, totalOut = 0, totalDmg = 0;
-  localDraftList.forEach(item => {
-    if(item.mode === '入庫') totalIn += item.qty;
-    if(item.mode === '出庫') totalOut += item.qty;
-    if(item.mode === 'ダメージ') totalDmg += item.qty;
-  });
-
-  let html = '<table class="draft-table" style="margin-bottom:10px;"><thead><tr><th>区分</th><th>賞味期限</th><th>数量</th><th>操作</th></tr></thead><tbody>';
-  localDraftList.forEach((item, index) => {
-    let modeLabel = item.mode;
-    if(item.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
-    if(item.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
-    html += `<tr>
-      <td><strong>${modeLabel}</strong></td>
-      <td>${item.expiry}</td>
-      <td>${item.qty}箱</td>
-      <td>
-        <button class="btn-mini btn-mini-edit" onclick="editDraftItem(${index})">修正</button>
-        <button class="btn-mini btn-mini-delete" onclick="deleteDraftItem(${index})">削除</button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-
-  html += `<div style="font-size:12px; font-weight:bold; color:#333; margin-bottom:12px; background:#fff; padding:5px; border:1px solid #ccc; border-radius:3px;">`;
-  html += ` 現在の入力合計 ➔ 入庫: <span style="color:var(--in-color);">${totalIn}</span> 箱 / 出庫: <span style="color:var(--out-color);">${totalOut}</span> 箱 / ダメージ: <span style="color:var(--dmg-color);">${totalDmg}</span> 箱`;
-  html += `</div>`;
-
-  let calcInventory = JSON.parse(JSON.stringify(currentInventory));
-  localDraftList.forEach(item => {
-    if (item.mode === '入庫') {
-      let exist = calcInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) { exist.qty += item.qty; } else { calcInventory.push({ expiry: item.expiry, qty: item.qty, isOldest: false }); }
-    } else if (item.mode === '出庫') {
-      let checkQty = item.qty;
-      for (let i = 0; i < calcInventory.length; i++) {
-        if (calcInventory[i].qty > 0) {
-          if (calcInventory[i].qty >= checkQty) { calcInventory[i].qty -= checkQty; checkQty = 0; break; }
-          else { checkQty -= calcInventory[i].qty; calcInventory[i].qty = 0; }
-        }
-      }
-    } else if (item.mode === 'ダメージ') {
-      let exist = calcInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) { exist.qty = Math.max(0, exist.qty - item.qty); }
-    }
-  });
-
-  calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
-  let foundOldest = false;
-  calcInventory.forEach(inv => {
-    inv.isOldest = false;
-    if (inv.qty > 0 && !foundOldest) { inv.isOldest = true; foundOldest = true; }
-  });
-
-  let calcTotal = calcInventory.reduce((sum, inv) => sum + inv.qty, 0);
-
-  html += `<div class="draft-title" style="margin-top:10px; color:#2C3E50;">📊 送信後の予測在庫（棚卸確認用）：</div>`;
-  html += `<table class="draft-table"><thead><tr style="background-color:#BDC3C7;"><th style="background-color:#AEB6BF; color:#2C3E50;">賞味期限</th><th style="background-color:#AEB6BF; color:#2C3E50;">予測残り</th></tr></thead><tbody>`;
-  calcInventory.forEach(inv => {
-    let rowStyle = inv.isOldest ? ' style="background-color:#FCF3CF; font-weight:bold;"' : '';
-    html += `<tr${rowStyle}><td>${inv.expiry} ${inv.isOldest ? '(最古)' : ''}</td><td>${inv.qty} ケース</td></tr>`;
-  });
-  html += `<tr style="background:#EAECEE; font-weight:bold;"><td style="text-align:right;">予測合計:</td><td>${calcTotal} ケース</td></tr>`;
-  html += '</tbody></table>';
-
-  container.innerHTML = html;
-}
-
-function editDraftItem(index) {
-  const item = localDraftList[index];
-  const newQty = prompt(`【手元データ修正】数量（ケース数）を修正してください:`, item.qty);
-  if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { localDraftList[index].qty = parsedQty; updateDraftDisplay(); } }
-}
-function deleteDraftItem(index) { localDraftList.splice(index, 1); updateDraftDisplay(); if(currentMode === 'ダメージ') updateExpiryDropdown(); }
-
-function saveToCloud() {
-  if(localDraftList.length === 0 && cloudSharedList.length === 0) { alert('追加されたデータがありません。'); return; }
-
-  let calcInventory = JSON.parse(JSON.stringify(currentInventory));
-  let processedList = [];
-
-  localDraftList.forEach(item => {
-    if (item.mode === '入庫' || item.mode === 'ダメージ') {
-      processedList.push(item);
-      let exist = calcInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) {
-        if(item.mode === '入庫') exist.qty += item.qty;
-        if(item.mode === 'ダメージ') exist.qty = Math.max(0, exist.qty - item.qty);
-      } else if(item.mode === '入庫') {
-        calcInventory.push({ expiry: item.expiry, qty: item.qty });
+  function loadData(key, defaultValue) {
+    let raw = localStorage.getItem(key);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch(e) {
+        return defaultValue;
       }
     }
-  });
-
-  localDraftList.forEach(item => {
-    if (item.mode === '出庫') {
-      let checkQty = item.qty;
-      calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
-      for (let i = 0; i < calcInventory.length; i++) {
-        if (calcInventory[i].qty > 0) {
-          if (calcInventory[i].qty >= checkQty) {
-            processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: checkQty });
-            calcInventory[i].qty -= checkQty; checkQty = 0; break;
-          } else {
-            processedList.push({ mode: '出庫', expiry: calcInventory[i].expiry, qty: calcInventory[i].qty });
-            checkQty -= calcInventory[i].qty; calcInventory[i].qty = 0;
-          }
-        }
-      }
-      if (checkQty > 0) {
-        processedList.push({ mode: '出庫', expiry: calcInventory[0] ? calcInventory[0].expiry : "未特定", qty: checkQty });
-      }
-    }
-  });
-
-  cloudSharedList = cloudSharedList.concat(processedList);
-  localDraftList = [];
-  updateDraftDisplay();
-  updateLeaderTable();
-  alert('データをチェック者画面へ送信しました！');
-}
-
-function updateLeaderTable() {
-  const tbody = document.getElementById('leaderCheckTableBody');
-  if (cloudSharedList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:#7f8c8d; background:#fff;">一時保存されたデータはまだありません</td></tr>';
-    document.getElementById('leaderPredictionArea').innerHTML = "データが送信されると変化が表示されます";
-    return;
-  }
-  tbody.innerHTML = '';
-  cloudSharedList.forEach((item, index) => {
-    let row = tbody.insertRow(); row.style.background = "#fff";
-    let modeLabel = item.mode;
-    if(item.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
-    if(item.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
-    row.insertCell(0).innerHTML = modeLabel; row.insertCell(1).innerText = item.expiry; row.insertCell(2).innerText = item.qty + " ケース";
-    let actionCell = row.insertCell(3);
-    actionCell.innerHTML = `<button class="btn-mini btn-mini-edit" onclick="editSharedItem(${index})">修正</button><button class="btn-mini btn-mini-delete" onclick="deleteSharedItem(${index})">削除</button>`;
-  });
-
-  calculateLeaderPrediction();
-}
-
-function editSharedItem(index) {
-  const item = cloudSharedList[index];
-  const newQty = prompt(`${item.expiry} の数量を修正します:`, item.qty);
-  if (newQty !== null) { const parsedQty = parseInt(newQty); if (parsedQty > 0) { cloudSharedList[index].qty = parsedQty; updateLeaderTable(); } }
-}
-function deleteSharedItem(index) { if (confirm('削除してよろしいですか？')) { cloudSharedList.splice(index, 1); updateLeaderTable(); } }
-
-function calculateLeaderPrediction() {
-  const area = document.getElementById('leaderPredictionArea');
-  let calcInventory = JSON.parse(JSON.stringify(currentInventory));
-  let totalDmg = 0;
-
-  cloudSharedList.forEach(item => {
-    if (item.mode === '入庫') {
-      let exist = calcInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) { exist.qty += item.qty; } else { calcInventory.push({ expiry: item.expiry, qty: item.qty }); }
-    } else if (item.mode === '出庫' || item.mode === 'ダメージ') {
-      let exist = calcInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) { exist.qty = Math.max(0, exist.qty - item.qty); }
-      if (item.mode === 'ダメージ') totalDmg += item.qty;
-    }
-  });
-
-  let html = "";
-  let beforeTotal = currentInventory.reduce((sum, i) => sum + i.qty, 0);
-  let afterTotal = 0;
-
-  calcInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
-  calcInventory.forEach(inv => {
-    if(inv.qty > 0 || currentInventory.some(i => i.expiry === inv.expiry)) {
-      let beforeItem = currentInventory.find(i => i.expiry === inv.expiry);
-      let beforeQty = beforeItem ? beforeItem.qty : 0;
-      afterTotal += inv.qty;
-      let diff = inv.qty - beforeQty;
-      let diffStr = diff > 0 ? `<span style="color:var(--in-color); font-weight:bold;">(📈 +${diff})</span>` : (diff < 0 ? `<span style="color:var(--out-color); font-weight:bold;">(📉 ${diff})</span>` : '(±0)');
-      html += `・${inv.expiry} 残り: ${beforeQty} ケース ➔ ${inv.qty} ケース ${diffStr}<br>`;
-    }
-  });
-
-  let totalDiff = afterTotal - beforeTotal;
-  let totalDiffStr = totalDiff > 0 ? `(📈 +${totalDiff})` : (totalDiff < 0 ? `(📉 ${totalDiff})` : '(±0)');
-  html += `<hr style="border:none; border-top:1px dashed #ccc; margin:6px 0;">`;
-  html += `・合計在庫数: ${beforeTotal} ケース ➔ ${afterTotal} ケース <strong>${totalDiffStr}</strong><br><br>`;
-  html += `<span style="color:var(--dmg-color); font-weight:bold; font-size:14px;">⚠️ 本日のダメージ品（総数）: ${totalDmg} ケース</span>`;
-
-  area.innerHTML = html;
-}
-
-
-/* 🔗 2. 【ここにGASのURLを貼り付けます！】 */
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwM82gB25la1XKIogN7h0VSoG6TcU8DbUWpKj5nTFYscgKJ8zraVxVMXxNOrfJE4iTd4w/exec";
-
-
-function closeBusiness() {
-  if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL === "") {
-    alert("【テスト用通知】\n現在GASのURLが未設定のためメール送信はスキップしますが、画面上の確定シミュレーション処理を実行します。");
-    executeLocalClose();
-    return;
+    return defaultValue;
   }
 
-  const name = document.getElementById('checkerName').value;
-  if(!name) { alert('最終チェック者を選択してください。'); return; }
-  if(cloudSharedList.length === 0) { alert('確定するデータがありません。'); return; }
-
-  let now = new Date();
-  let timeStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0') + " " + String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-
-  let uploadData = cloudSharedList.map(item => {
-    return { datetime: timeStr, mode: item.mode, expiry: item.expiry, qty: item.qty, checker: name };
-  });
-
-  // ぐるぐる（ローディング）の代わりに、ボタンを連打できないよう無効化
-  const closeBtn = document.querySelector('.btn-close-day');
-  if(closeBtn) {
-    closeBtn.disabled = true;
-    closeBtn.innerText = "⏳ 送信中...";
+  function saveData() {
+    localStorage.setItem("startStock", JSON.stringify(startStock));
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+    localStorage.setItem("commitHistory", JSON.stringify(commitHistory));
+    localStorage.setItem("systemLogs", JSON.stringify(systemLogs));
   }
 
-  fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify(uploadData) })
-    .then(() => {
-      // 💡 GASからの返事の内容（JSONかテキストか）を無視し、通信が到達した時点で成功とみなす
-      finalizeInventory(uploadData);
-      alert(name + ' さんが確認しました。\nGoogleスプレッドシートへの一括確定送信が完了しました！');
-      cloudSharedList = [];
-      updateInventoryDisplay();
-      updateLeaderTable();
-      updateAdminLogTable();
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('通信そのものに失敗しました。インターネット接続やURLの設定を確認してください。');
-    })
-    .finally(() => {
-      // ボタンの状態を元に戻す
-      if(closeBtn) {
-        closeBtn.disabled = false;
-        closeBtn.innerText = "🔒 業務終了（データを一括確定）";
+  function resetLocalStorage() {
+    if (confirm("これまでに保存されたすべての入力データ・履歴・システムログがリセットされ、初期状態に戻ります。よろしいですか？")) {
+      localStorage.clear();
+      startStock = { ...defaultStartStock };
+      transactions = [];
+      commitHistory = [ ...defaultCommitHistory ];
+      systemLogs = [];
+      saveData();
+      updateSystemState();
+      alert("データを完全にリセットしました。");
+      switchView('view-menu');
+    }
+  }
+
+  window.onload = function() {
+    updateSystemState();
+  };
+
+  // ==================== ログの生成関数 ====================
+  function addSystemLog(actionType, message) {
+    let now = new Date();
+    let timeStr = `${("0" + (now.getMonth() + 1)).slice(-2)}/${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}`;
+    systemLogs.unshift({
+      time: timeStr,
+      action: actionType, // '修正' or '削除' or '一括登録'
+      text: message
+    });
+    saveData();
+  }
+
+  // ==================== 状態更新 ＆ 画面反映 ====================
+  function updateSystemState() {
+    let currentStock = { ...startStock };
+    let sumIn = 0;
+    let sumOut = 0;
+
+    transactions.forEach(t => {
+      if (t.type === '入庫') {
+        currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
+        sumIn += t.qty;
+      } else {
+        currentStock[t.date] = (currentStock[t.date] || 0) - t.qty;
+        sumOut += t.qty;
       }
     });
-}
 
-function executeLocalClose() {
-  const name = document.getElementById('checkerName').value || "テスト管理者";
-  if(cloudSharedList.length === 0) { alert('確定するデータがありません。'); return; }
-  let now = new Date();
-  let timeStr = String(now.getMonth() + 1).padStart(2, '0') + "/" + String(now.getDate()).padStart(2, '0') + " " + String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-  let uploadData = cloudSharedList.map(item => {
-    return { datetime: timeStr, mode: item.mode, expiry: item.expiry, qty: item.qty, checker: name };
-  });
-  finalizeInventory(uploadData);
-  alert('【手元テスト確定】\n画面内の「②現在の倉庫在庫状況」と「④ログ」に反映しました！');
-  cloudSharedList = [];
-  updateInventoryDisplay();
-  updateLeaderTable();
-  updateAdminLogTable();
-}
+    // --- 現場画面の更新 ---
+    document.getElementById('driver-sum-in').innerText = `+${sumIn}`;
+    document.getElementById('driver-sum-out').innerText = `-${sumOut}`;
+    
+    let totalStock = Object.values(currentStock).reduce((a, b) => a + b, 0);
+    let totalStart = Object.values(startStock).reduce((a, b) => a + b, 0);
+    document.getElementById('driver-total-stock').innerText = `${totalStock} ケース`;
+    document.getElementById('driver-start-stock').innerText = `(本日開始時: ${totalStart} ケース)`;
 
-function finalizeInventory(uploadData) {
-  uploadData.forEach(item => {
-    if (item.mode === '入庫') {
-      let exist = currentInventory.find(inv => inv.expiry === item.expiry);
-      if (exist) { exist.qty += item.qty; } else { currentInventory.push({ expiry: item.expiry, qty: item.qty, isOldest: false }); }
+    let tbody = document.getElementById('driver-stock-table-body');
+    tbody.innerHTML = '';
+    
+    let selectDmg = document.getElementById('dmg-target-date');
+    let selectRep = document.getElementById('dmg-rep-date');
+    let selectAdmin = document.getElementById('admin-io-date');
+    
+    let currentDmgVal = selectDmg.value;
+    let currentRepVal = selectRep.value;
+    let currentAdminVal = selectAdmin.value;
+
+    selectDmg.innerHTML = '';
+    selectRep.innerHTML = '';
+    selectAdmin.innerHTML = '';
+
+    Object.keys(currentStock).sort().forEach((date, index) => {
+      let qty = currentStock[date];
+      let isOldest = (index === 0 && qty > 0) ? "【最古】" : "";
+      
+      let row = `<tr>
+        <td style="text-align:left; padding-left:15px;">${isOldest}${date}</td>
+        <td>${qty} ケース</td>
+      </tr>`;
+      tbody.innerHTML += row;
+
+      let optText = `${date} (残${qty}ケース)`;
+      selectDmg.innerHTML += `<option value="${date}">${optText}</option>`;
+      selectRep.innerHTML += `<option value="${date}">${optText}</option>`;
+      selectAdmin.innerHTML += `<option value="${date}">${date}</option>`;
+    });
+
+    if (currentDmgVal) selectDmg.value = currentDmgVal;
+    if (currentRepVal) selectRep.value = currentRepVal;
+    if (currentAdminVal) selectAdmin.value = currentAdminVal;
+
+    // --- リーダー画面の更新 ---
+    let pendingBody = document.getElementById('leader-pending-body');
+    pendingBody.innerHTML = '';
+    let pendingTx = transactions.filter(t => t.status === 'pending');
+    
+    if (pendingTx.length === 0) {
+      pendingBody.innerHTML = `<tr><td colspan="5" style="color:#999; padding:15px;">一時データはありません</td></tr>`;
     } else {
-      for (let i = 0; i < currentInventory.length; i++) {
-        if (currentInventory[i].expiry === item.expiry) {
-          currentInventory[i].qty = Math.max(0, currentInventory[i].qty - item.qty);
-          break;
+      pendingTx.forEach(t => {
+        let row = `<tr>
+          <td><span class="badge badge-pending">⚠️未確定</span></td>
+          <td>${t.type}</td>
+          <td>${t.date}</td>
+          <td>${t.qty} 箱</td>
+          <td>
+            <button class="btn-sm" style="background:#f39c12; color:#fff; border:none; border-radius:3px;" onclick="editTx(${t.id})">修正</button>
+            <button class="btn-sm" style="background:#e74c3c; color:#fff; border:none; border-radius:3px;" onclick="deleteTx(${t.id})">削除</button>
+          </td>
+        </tr>`;
+        pendingBody.innerHTML += row;
+      });
+    }
+
+    // 確定履歴テーブル
+    let historyBody = document.getElementById('history-table-body');
+    historyBody.innerHTML = '';
+    commitHistory.forEach(h => {
+      let row = `<tr>
+        <td><span class="badge badge-success">✅報告済</span></td>
+        <td>${h.time}</td>
+        <td>${h.type}</td>
+        <td>${h.date}</td>
+        <td>${h.qty} 箱</td>
+      </tr>`;
+      historyBody.innerHTML += row;
+    });
+
+    // --- 管理者画面 確定データ修正の更新 ---
+    let adminModifyBody = document.getElementById('admin-modify-body');
+    adminModifyBody.innerHTML = '';
+    let committedTx = transactions.filter(t => t.status === 'committed');
+
+    if (committedTx.length === 0) {
+      adminModifyBody.innerHTML = `<tr><td colspan="4" style="color:#999; padding:15px;">確定データはありません</td></tr>`;
+    } else {
+      committedTx.forEach(t => {
+        let row = `<tr>
+          <td>${t.type}</td>
+          <td>${t.date}</td>
+          <td>${t.qty} 箱</td>
+          <td>
+            <button class="btn-sm" style="background:#f39c12; color:#fff; border:none; border-radius:3px;" onclick="editTx(${t.id})">修正</button>
+            <button class="btn-sm" style="background:#e74c3c; color:#fff; border:none; border-radius:3px;" onclick="deleteTx(${t.id})">削除</button>
+          </td>
+        </tr>`;
+        adminModifyBody.innerHTML += row;
+      });
+    }
+
+    // --- システム操作ログの更新表示 ---
+    let logListDiv = document.getElementById('admin-log-list');
+    if (systemLogs.length === 0) {
+      logListDiv.innerHTML = `<div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>`;
+    } else {
+      logListDiv.innerHTML = '';
+      systemLogs.forEach(log => {
+        let color = log.action === '削除' ? '#e74c3c' : (log.action === '修正' ? '#f39c12' : '#27ae60');
+        logListDiv.innerHTML += `<div class="log-item">
+          <span style="color:#888;">[${log.time}]</span> 
+          <span style="color:${color}; font-weight:bold;">[${log.action}]</span> 
+          ${log.text}
+        </div>`;
+      });
+    }
+  }
+
+  // ==================== ダメージ報告 ====================
+  function syncReplenishDate() {
+    let dmgDate = document.getElementById('dmg-target-date').value;
+    document.getElementById('dmg-rep-date').value = dmgDate;
+  }
+
+  function submitDamageReport() {
+    let dmgDate = document.getElementById('dmg-target-date').value;
+    let qty = parseInt(document.getElementById('dmg-qty').value) || 0;
+    let repDate = document.getElementById('dmg-rep-date').value;
+
+    if (qty <= 0) {
+      alert("正しい数量を入力してください。");
+      return;
+    }
+
+    transactions.push({
+      id: Date.now(),
+      type: 'ダメージ',
+      date: dmgDate,
+      qty: qty,
+      status: 'pending'
+    });
+
+    transactions.push({
+      id: Date.now() + 1,
+      type: '代替出庫',
+      date: repDate,
+      qty: qty,
+      status: 'pending'
+    });
+
+    saveData();
+    updateSystemState();
+    showAlert("一時ダメージ報告を登録しました！リーダー確認をお待ちください。");
+    switchView('view-menu');
+  }
+
+  // ==================== リーダー機能 ====================
+  function commitLeaderData() {
+    let pendingTx = transactions.filter(t => t.status === 'pending');
+    if (pendingTx.length === 0) {
+      alert("確定待ちの一時保存データはありません。");
+      return;
+    }
+
+    let now = new Date();
+    let timeStr = `${("0" + (now.getMonth() + 1)).slice(-2)}/${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}`;
+
+    pendingTx.forEach(t => {
+      t.status = 'committed'; // 本番確定へ
+      commitHistory.unshift({
+        time: timeStr,
+        type: t.type,
+        date: t.date,
+        qty: t.qty
+      });
+    });
+
+    saveData();
+    updateSystemState();
+    showAlert("データを送信し、一括確定（業務終了）しました！");
+    switchView('view-menu');
+  }
+
+  function toggleHistory() {
+    let section = document.getElementById('history-section');
+    section.classList.toggle('hidden');
+  }
+
+  // ==================== 管理者機能 ====================
+  function unlockAdmin() {
+    let pass = document.getElementById('admin-pass').value;
+    if (pass === "1234") {
+      document.getElementById('view-admin-auth').classList.add('hidden');
+      document.getElementById('view-admin-main').classList.remove('hidden');
+    } else {
+      alert("パスワードが違います（テスト用は 1234 です）");
+    }
+  }
+
+  function submitAdminManual() {
+    let types = document.getElementsByName('admin-io-type');
+    let type = "入庫";
+    for(let r of types) { if(r.checked) type = r.value; }
+    
+    let date = document.getElementById('admin-io-date').value;
+    let qty = parseInt(document.getElementById('admin-io-qty').value) || 0;
+
+    if (qty <= 0) {
+      alert("正しい数量を入力してください");
+      return;
+    }
+
+    transactions.push({
+      id: Date.now(),
+      type: type,
+      date: date,
+      qty: qty,
+      status: 'committed'
+    });
+
+    addSystemLog("手動登録", `${date} の [${type}] を 新規に ${qty} 箱 追加登録しました。`);
+    saveData();
+    updateSystemState();
+    showAlert(`管理データに 【${type}: ${date} - ${qty}ケース】 を追加しました`);
+  }
+
+  function submitAdminPaste() {
+    let text = document.getElementById('admin-paste-area').value.trim();
+    if (!text) {
+      alert("貼り付けエリアが空です");
+      return;
+    }
+
+    let rows = text.split('\n');
+    let count = 0;
+
+    rows.forEach((rowStr, i) => {
+      let cols = rowStr.split('\t');
+      if (cols.length >= 3) {
+        let date = cols[0].trim();
+        let type = cols[1].trim();
+        let qty = parseInt(cols[2].trim()) || 0;
+
+        if (qty > 0 && (type === '入庫' || type === '出庫')) {
+          transactions.push({
+            id: Date.now() + i,
+            type: type,
+            date: date,
+            qty: qty,
+            status: 'committed'
+          });
+          count++;
         }
       }
+    });
+
+    addSystemLog("一括登録", `コピペ機能により取引データを一括で ${count} 件 追加登録しました。`);
+    saveData();
+    updateSystemState();
+    document.getElementById('admin-paste-area').value = '';
+    showAlert(`貼り付けデータから ${count} 件を一括登録しました！`);
+  }
+
+  // 確定データ修正（システムログへの自動記録対応）
+  function editTx(id) {
+    let t = transactions.find(item => item.id === id);
+    if (!t) return;
+    
+    let newQtyStr = prompt(`${t.date} [${t.type}] の数量を変更してください`, t.qty);
+    if (newQtyStr === null) return;
+
+    let newQty = parseInt(newQtyStr) || 0;
+    if (newQty <= 0) {
+      alert("数量は1以上で入力してください");
+      return;
     }
-    adminLogList.unshift(item);
-    if (adminLogList.length > 1000) adminLogList.pop();
-  });
-}
 
-function viewLogWithoutPassword() {
-  const content = document.getElementById('adminContent');
-  const btnDownload = document.getElementById('btnDownloadCSV');
-  content.style.display = 'block';
-  updateAdminLogTable();
-  if (!isAdminMode) btnDownload.style.display = 'none';
-  document.getElementById('adminMenuBtn').scrollIntoView({ behavior: 'smooth' });
-}
+    let oldQty = t.qty;
+    t.qty = newQty;
 
-function updateInventoryDisplay() {
-  const tbody = document.getElementById('inventoryTableBody');
-  const totalSpan = document.getElementById('totalStockNum');
+    // 操作履歴ログへの登録
+    addSystemLog("修正", `${t.date} [${t.type}] 数量: ${oldQty} 箱 ──➔ 【 ${newQty} 箱 】に変更しました。`);
 
-  currentInventory = currentInventory.filter(inv => inv.qty > 0);
-  currentInventory.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
-
-  let total = 0; tbody.innerHTML = '';
-  currentInventory.forEach((inv, index) => {
-    inv.isOldest = (index === 0); total += inv.qty;
-    let row = tbody.insertRow(); if (inv.isOldest) row.className = 'alert-row';
-    row.insertCell(0).innerText = inv.expiry + (inv.isOldest ? ' (最古)' : '');
-    row.insertCell(1).innerText = inv.qty + ' ケース';
-  });
-  totalSpan.innerText = total.toLocaleString();
-}
-
-function updateAdminLogTable() {
-  const tbody = document.getElementById('adminLogTableBody');
-  const countDiv = document.getElementById('logCount');
-  if(!tbody || !countDiv) return;
-  countDiv.innerText = `表示件数: ${adminLogList.length}件 / 最大1000件`;
-
-  if (adminLogList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="color:#7f8c8d; background:#fff; text-align:center;">確定されたログはまだありません</td></tr>';
-    return;
+    saveData();
+    updateSystemState();
+    showAlert("数量の修正を反映しました");
   }
-  tbody.innerHTML = '';
-  adminLogList.forEach(log => {
-    let row = tbody.insertRow(); row.style.background = "#fff";
-    row.insertCell(0).innerText = log.datetime;
-    let modeLabel = log.mode;
-    if(log.mode === 'ダメージ') modeLabel = '<span style="color:var(--dmg-color); font-weight:bold;">ダメージ</span>';
-    if(log.mode === '出庫') modeLabel = '<span style="color:var(--out-color); font-weight:bold;">出庫</span>';
-    row.insertCell(1).innerHTML = modeLabel;
-    row.insertCell(2).innerText = log.expiry;
-    row.insertCell(3).innerText = log.qty;
-    row.insertCell(4).innerText = log.checker;
-  });
-}
 
-function downloadCSV() {
-  if(adminLogList.length === 0) { alert('出力するログデータがありません。'); return; }
-  let csvContent = "\uFEFF" + "日時,区分,賞味期限,数量(ケース),チェック者\n";
-  adminLogList.forEach(log => { csvContent += `${log.datetime},${log.mode},${log.expiry},${log.qty},${log.checker}\n`; });
-  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  let link = document.createElement("a");
-  let url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", `入出庫確定ログ_${new Date().toISOString().slice(0,10)}.csv`);
-  link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-}
+  // 確定データ削除（システムログへの自動記録対応）
+  function deleteTx(id) {
+    let t = transactions.find(item => item.id === id);
+    if (!t) return;
 
-function toggleAdminMenu() {
-  const content = document.getElementById('adminContent');
-  const btnDownload = document.getElementById('btnDownloadCSV');
+    if (!confirm(`本当にこのデータを削除してもよろしいですか？\n[${t.type}] ${t.date} (${t.qty} 箱)`)) return;
+    
+    // 操作履歴ログへの登録
+    addSystemLog("削除", `${t.date} [${t.type}] のデータ（${t.qty} 箱）を削除しました。`);
 
-  if (content.style.display === 'block' && isAdminMode) {
-    content.style.display = 'none'; isAdminMode = false;
-  } else {
-    const pw = prompt("管理者の暗証番号を入力してください:");
-    if (pw === "1234") {
-      isAdminMode = true; content.style.display = 'block'; btnDownload.style.display = 'block'; updateAdminLogTable();
-    } else if (pw !== null) { alert("パスワードが違います。"); }
+    transactions = transactions.filter(item => item.id !== id);
+    saveData();
+    updateSystemState();
+    showAlert("データを削除しました");
   }
-}
 
-document.addEventListener("DOMContentLoaded", function() {
-  var defaultDate = new Date();
-  defaultDate.setDate(defaultDate.getDate() + 30);
-  var yyyy = defaultDate.getFullYear();
-  var mm = String(defaultDate.getMonth() + 1).padStart(2, '0');
-  var dd = String(defaultDate.getDate()).padStart(2, '0');
-  const calInput = document.getElementById('expiryCal');
-  if(calInput) calInput.value = yyyy + '-' + mm + '-' + dd;
-  updateInventoryDisplay();
-});
+  function downloadCSV() {
+    let csvContent = "\uFEFF"; 
+    csvContent += "ステータス,区分,賞味期限,数量(ケース)\n";
+    
+    transactions.forEach(t => {
+      csvContent += `${t.status},${t.type},${t.date},${t.qty}\n`;
+    });
+
+    // 操作ログもCSVの別セクションとして出力
+    csvContent += "\n--- 管理者システム操作ログ ---\n";
+    csvContent += "操作日時,アクション,変更詳細\n";
+    systemLogs.forEach(log => {
+      csvContent += `"${log.time}","${log.action}","${log.text}"\n`;
+    });
+
+    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "potato_inventory_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // ==================== ユーティリティ ====================
+  function switchView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById(viewId).classList.remove('hidden');
+
+    let backBtn = document.getElementById('back-button');
+    let titleSpan = document.getElementById('header-title');
+
+    if (viewId === 'view-menu') {
+      backBtn.classList.add('hidden');
+      titleSpan.innerText = "ポテト在庫システム（テスト版）";
+      viewHistory = ['view-menu'];
+    } else {
+      backBtn.classList.remove('hidden');
+      viewHistory.push(viewId);
+      
+      if (viewId === 'view-driver') titleSpan.innerText = "在庫確認・ダメージ報告";
+      if (viewId === 'view-leader') titleSpan.innerText = "最終チェック";
+      if (viewId === 'view-admin-auth' || viewId === 'view-admin-main') titleSpan.innerText = "管理者メニュー";
+    }
+  }
+
+  function goBack() {
+    if (viewHistory.length > 1) {
+      viewHistory.pop();
+      let prevView = viewHistory[viewHistory.length - 1];
+      switchView(prevView);
+    } else {
+      switchView('view-menu');
+    }
+  }
+
+  function showAlert(msg) {
+    let alertDiv = document.getElementById('alert-msg');
+    alertDiv.innerText = msg;
+    alertDiv.classList.remove('hidden');
+    setTimeout(() => {
+      alertDiv.classList.add('hidden');
+    }, 4000);
+  }
 </script>
+
 </body>
 </html>
