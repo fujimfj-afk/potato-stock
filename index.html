@@ -153,7 +153,7 @@
       margin: 2px;
     }
 
-    /* 手動入出庫用のタブスタイル */
+    /* 手動入出庫用のタブスタイル（カラーハッキリ化） */
     .tab-group {
       display: flex;
       border-bottom: 2px solid #ddd;
@@ -161,21 +161,45 @@
     }
     .tab-btn {
       flex: 1;
-      padding: 10px;
+      padding: 12px 10px;
       text-align: center;
       background: #f4f6f9;
       border: 1px solid #ddd;
       border-bottom: none;
       cursor: pointer;
       font-weight: bold;
-      font-size: 0.9rem;
+      font-size: 1rem;
+      transition: all 0.2s;
     }
-    .tab-btn.active {
-      background: #fff;
-      border-top: 3px solid #2980b9;
-      border-bottom: 2px solid #fff;
+    /* 入庫タブ選択時（オレンジ） */
+    .tab-btn#tab-in.active {
+      background: #fff3e0;
+      border-top: 4px solid #e67e22;
+      border-bottom: 2px solid #fff3e0;
       margin-bottom: -2px;
-      color: #2980b9;
+      color: #d35400;
+    }
+    /* 出庫タブ選択時（青） */
+    .tab-btn#tab-out.active {
+      background: #e3f2fd;
+      border-top: 4px solid #2980b9;
+      border-bottom: 2px solid #e3f2fd;
+      margin-bottom: -2px;
+      color: #0d47a1;
+    }
+
+    /* 登録ボタンの動的色切り替え */
+    .btn-action-in {
+      background-color: #e67e22 !important;
+    }
+    .btn-action-in:active {
+      background-color: #d35400 !important;
+    }
+    .btn-action-out {
+      background-color: #2980b9 !important;
+    }
+    .btn-action-out:active {
+      background-color: #1f6391 !important;
     }
 
     /* フォーム周り */
@@ -435,26 +459,30 @@
 
         <input type="hidden" id="admin-io-type" value="入庫">
 
-        <div class="form-group">
-          <label>(1) 賞味期限</label>
-          
+        <div class="form-group" id="admin-io-date-group">
+          <label id="io-date-label">(1) 賞味期限</label>
           <input type="date" class="form-control" id="admin-io-date-cal">
-          
-          <select class="form-control hidden" id="admin-io-date-select">
-            </select>
+          <div id="io-auto-alloc-msg" class="hidden" style="color: #2980b9; font-weight: bold; font-size: 0.9rem; padding: 5px 0;">
+            ※賞味期限の古い在庫から自動的に引き当て出庫されます。
+          </div>
         </div>
 
         <div class="form-group">
-          <label>(2) 数量</label>
+          <label id="io-qty-label">(2) 数量</label>
           <input type="number" class="form-control" id="admin-io-qty" value="100" min="1">
         </div>
-        <button class="btn btn-sm btn-menu-admin" onclick="submitAdminManual()">➕ 登録する</button>
+        
+        <button class="btn btn-action-in" id="admin-manual-submit-btn" onclick="submitAdminManual()">➕ 登録する</button>
 
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
 
         <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">【 コピペで一括登録 】</div>
         <div class="form-group">
-          <textarea class="form-control" id="admin-paste-area" rows="4" placeholder="賞味期限[タブ]区分[タブ]数量 のように貼り付け"></textarea>
+          <textarea class="form-control" id="admin-paste-area" rows="4" placeholder="（例）&#13;2027/04/01 入庫 50&#13;2027/05/01 出庫 20"></textarea>
+          <div style="font-size:0.75rem; color:#666; margin-top:5px; line-height:1.3;">
+            ※Excelからコピー、または「スペース」「カンマ」「タブ」などで区切って貼り付け可能です。<br>
+            ※出庫データを貼り付けた場合も、賞味期限の古い順に自動引き当てされます。
+          </div>
         </div>
         <button class="btn btn-sm btn-menu-admin" onclick="submitAdminPaste()">📋 一括登録を実行</button>
       </div>
@@ -543,7 +571,6 @@
   }
 
   window.onload = function() {
-    // 入庫賞味期限のデフォルトとして本日日付を設定
     let today = new Date().toISOString().split('T')[0];
     document.getElementById('admin-io-date-cal').value = today;
     updateSystemState();
@@ -560,7 +587,6 @@
       text: message
     });
 
-    // 最大30件制限をかける
     if (systemLogs.length > 30) {
       systemLogs = systemLogs.slice(0, 30);
     }
@@ -580,19 +606,41 @@
     return currentStock;
   }
 
+  // ==================== 在庫の総数計算用 ====================
+  function calcTotalStockAmount() {
+    let currentStock = calcCurrentStock();
+    return Object.values(currentStock).reduce((sum, q) => sum + q, 0);
+  }
+
   // ==================== 入出庫タブ切り替え ====================
   function switchIoTab(tabType) {
     document.getElementById('admin-io-type').value = tabType;
+    let submitBtn = document.getElementById('admin-manual-submit-btn');
+
     if (tabType === '入庫') {
       document.getElementById('tab-in').classList.add('active');
       document.getElementById('tab-out').classList.remove('active');
+      
+      // 入庫時の表示設定 (カレンダーを表示、メッセージ非表示)
       document.getElementById('admin-io-date-cal').classList.remove('hidden');
-      document.getElementById('admin-io-date-select').classList.add('hidden');
+      document.getElementById('io-auto-alloc-msg').classList.add('hidden');
+      document.getElementById('io-date-label').innerText = "(1) 賞味期限";
+      document.getElementById('io-qty-label').innerText = "(2) 数量";
+      
+      submitBtn.innerText = "➕ この賞味期限で「入庫」する";
+      submitBtn.className = "btn btn-action-in";
     } else {
       document.getElementById('tab-in').classList.remove('active');
       document.getElementById('tab-out').classList.add('active');
+      
+      // 出庫時の表示設定 (カレンダーを隠し、自動引き当てメッセージを表示)
       document.getElementById('admin-io-date-cal').classList.add('hidden');
-      document.getElementById('admin-io-date-select').classList.remove('hidden');
+      document.getElementById('io-auto-alloc-msg').classList.remove('hidden');
+      document.getElementById('io-date-label').innerText = "(1) 自動引き当て処理";
+      document.getElementById('io-qty-label').innerText = "(2) 数量 (ケース)";
+
+      submitBtn.innerText = "➕ 古い順で「自動出庫」する";
+      submitBtn.className = "btn btn-action-out";
     }
   }
 
@@ -621,16 +669,14 @@
     
     let selectDmg = document.getElementById('dmg-target-date');
     let selectRep = document.getElementById('dmg-rep-date');
-    let selectAdminOut = document.getElementById('admin-io-date-select');
     
     let currentDmgVal = selectDmg.value;
     let currentRepVal = selectRep.value;
-    let currentAdminVal = selectAdminOut.value;
 
     selectDmg.innerHTML = '';
     selectRep.innerHTML = '';
-    selectAdminOut.innerHTML = '';
 
+    // 現在庫が0以上、または登録履歴がある日付をリスト化
     Object.keys(currentStock).sort().forEach((date, index) => {
       let qty = currentStock[date];
       let isOldest = (index === 0 && qty > 0) ? "【最古】" : "";
@@ -644,12 +690,10 @@
       let optText = `${date} (残${qty}ケース)`;
       selectDmg.innerHTML += `<option value="${date}">${optText}</option>`;
       selectRep.innerHTML += `<option value="${date}">${optText}</option>`;
-      selectAdminOut.innerHTML += `<option value="${date}">${optText}</option>`;
     });
 
     if (currentDmgVal) selectDmg.value = currentDmgVal;
     if (currentRepVal) selectRep.value = currentRepVal;
-    if (currentAdminVal) selectAdminOut.value = currentAdminVal;
 
     // --- リーダー画面の更新 ---
     let pendingBody = document.getElementById('leader-pending-body');
@@ -816,10 +860,53 @@
     }
   }
 
+  // 古い順に自動引き当てて出庫データをtransactionsに追加する処理（一括コピペ・手動共通）
+  function processAutoAllocatedOut(requestQty, isCommittedState = true, customBaseTransactions = null) {
+    let targetTransactions = customBaseTransactions ? [...customBaseTransactions] : [...transactions];
+    
+    // 現在の在庫状態を一時計算
+    let currentStock = { ...startStock };
+    targetTransactions.forEach(t => {
+      if (t.type === '入庫') currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
+      else currentStock[t.date] = (currentStock[t.date] || 0) - t.qty;
+    });
+
+    let totalAvailable = Object.values(currentStock).reduce((sum, q) => sum + q, 0);
+    if (requestQty > totalAvailable) {
+      return { success: false, errorReason: `全体在庫不足 (要求数:${requestQty}に対し現在総数:${totalAvailable})` };
+    }
+
+    // 賞味期限の古い順にソート
+    let sortedDates = Object.keys(currentStock).sort();
+    let remainingToAlloc = requestQty;
+    let newTransactionsAdded = [];
+    let timestampBase = Date.now();
+
+    for (let date of sortedDates) {
+      let qtyOnDate = currentStock[date] || 0;
+      if (qtyOnDate <= 0) continue;
+
+      let allocQty = Math.min(remainingToAlloc, qtyOnDate);
+      
+      newTransactionsAdded.push({
+        id: timestampBase++,
+        type: '出庫',
+        date: date,
+        qty: allocQty,
+        status: isCommittedState ? 'committed' : 'pending'
+      });
+
+      remainingToAlloc -= allocQty;
+      if (remainingToAlloc <= 0) break;
+    }
+
+    return { success: true, added: newTransactionsAdded };
+  }
+
+  // 手動登録ボタン押下時
   function submitAdminManual() {
     let type = document.getElementById('admin-io-type').value;
     let qty = parseInt(document.getElementById('admin-io-qty').value) || 0;
-    let date = "";
 
     if (qty <= 0) {
       alert("正しい数量を入力してください");
@@ -832,39 +919,44 @@
         alert("賞味期限（日付）を入力してください");
         return;
       }
-      date = rawDate.replace(/-/g, '/'); // YYYY/MM/DD フォーマットに変換
+      let date = rawDate.replace(/-/g, '/'); // YYYY/MM/DD 形式に
+
+      transactions.push({
+        id: Date.now(),
+        type: '入庫',
+        date: date,
+        qty: qty,
+        status: 'committed'
+      });
+
+      addSystemLog("手動登録", `${date} の [入庫] を 新規に ${qty} 箱 登録しました。`);
+      saveData();
+      updateSystemState();
+      showAlert(`管理データに 【入庫: ${date} - ${qty}ケース】 を追加しました`);
     } else {
-      date = document.getElementById('admin-io-date-select').value;
-      if (!date) {
-        alert("出庫する対象データが選択されていません");
+      // 出庫（自動引き当て処理を実行）
+      let result = processAutoAllocatedOut(qty, true);
+      if (!result.success) {
+        alert(`登録できません。\n${result.errorReason}`);
         return;
       }
+
+      // 引き当て結果を登録
+      transactions = transactions.concat(result.added);
+      
+      let logMsg = `[自動出庫] 計 ${qty} 箱。内訳：`;
+      result.added.forEach((t, i) => {
+        logMsg += `${i > 0 ? ', ' : ''}${t.date}(${t.qty}箱)`;
+      });
+      addSystemLog("手動登録", logMsg);
+
+      saveData();
+      updateSystemState();
+      showAlert(`古い順で計 ${qty} ケースの出庫引き当てを完了しました`);
     }
-
-    // マイナス在庫防止チェック（出庫時のみ）
-    if (type === '出庫') {
-      let currentStock = calcCurrentStock();
-      let available = currentStock[date] || 0;
-      if (qty > available) {
-        alert(`在庫不足のため、登録できません。\n${date} の現在庫は ${available} ケースです。`);
-        return;
-      }
-    }
-
-    transactions.push({
-      id: Date.now(),
-      type: type,
-      date: date,
-      qty: qty,
-      status: 'committed'
-    });
-
-    addSystemLog("手動登録", `${date} の [${type}] を 新規に ${qty} 箱 追加登録しました。`);
-    saveData();
-    updateSystemState();
-    showAlert(`管理データに 【${type}: ${date} - ${qty}ケース】 を追加しました`);
   }
 
+  // コピペ一括登録
   function submitAdminPaste() {
     let text = document.getElementById('admin-paste-area').value.trim();
     if (!text) {
@@ -872,58 +964,65 @@
       return;
     }
 
+    // 改行で1行ずつ分解
     let rows = text.split('\n');
     let count = 0;
-    let errCount = 0;
+    let skippedCount = 0;
 
+    // トランザクションを仮計算しながらチェックする作業用配列
     let tempTx = [...transactions];
 
-    for (let i = 0; i < rows.length; i++) {
-      let rowStr = rows[i];
-      let cols = rowStr.split('\t');
+    rows.forEach((rowStr, i) => {
+      // どのような区切り文字（タブ、カンマ、スペース）でも分解できるように正規表現で分割
+      let cols = rowStr.trim().split(/[\t,\s]+/);
+      
+      // 分解結果が3列（日付、区分、数量）あるかチェック
       if (cols.length >= 3) {
         let date = cols[0].trim().replace(/-/g, '/');
         let type = cols[1].trim();
         let qty = parseInt(cols[2].trim()) || 0;
 
-        if (qty > 0 && (type === '入庫' || type === '出庫')) {
-          // マイナス在庫チェック
-          if (type === '出庫') {
-            let currentStock = { ...startStock };
-            tempTx.forEach(t => {
-              if (t.type === '入庫') currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
-              else currentStock[t.date] = (currentStock[t.date] || 0) - t.qty;
-            });
-            let available = currentStock[date] || 0;
-            if (qty > available) {
-              errCount++;
-              continue; // スキップして次の行へ
-            }
-          }
-
+        if (qty > 0 && type === '入庫') {
+          // 入庫は通常登録
           tempTx.push({
-            id: Date.now() + i,
-            type: type,
+            id: Date.now() + i + 100,
+            type: '入庫',
             date: date,
             qty: qty,
             status: 'committed'
           });
           count++;
+        } else if (qty > 0 && type === '出庫') {
+          // 出庫は仮の配列をベースに「古い順自動引き当て」ロジックを通す
+          let result = processAutoAllocatedOut(qty, true, tempTx);
+          if (result.success) {
+            tempTx = tempTx.concat(result.added);
+            count++;
+          } else {
+            skippedCount++;
+          }
         }
+      } else {
+        skippedCount++;
       }
+    });
+
+    if (count === 0) {
+      alert("登録可能なデータが見つかりませんでした。\nフォーマットをご確認ください。\n(例) 2027/04/01 入庫 50");
+      return;
     }
 
     transactions = tempTx;
 
-    addSystemLog("一括登録", `コピペ機能により取引データを一括で ${count} 件 追加登録しました。(エラーにより ${errCount} 件スキップ)`);
+    addSystemLog("一括登録", `コピペ機能により一括で ${count} 件のデータを登録しました。 (対象外/在庫不足による未登録: ${skippedCount}件)`);
     saveData();
     updateSystemState();
     document.getElementById('admin-paste-area').value = '';
     
-    if (errCount > 0) {
-      showAlert(`一括登録が完了（登録:${count}件、在庫不足による未登録:${errCount}件）`);
+    if (skippedCount > 0) {
+      showAlert(`一括登録完了 (登録: ${count} 件、エラーまたは在庫不足スキップ: ${skippedCount} 件)`);
     } else {
-      showAlert(`貼り付けデータから ${count} 件を一括登録しました！`);
+      showAlert(`貼り付けデータから計 ${count} 件を一括登録しました！`);
     }
   }
 
@@ -940,11 +1039,11 @@
       return;
     }
 
-    // 修正時にもマイナス在庫を考慮する
+    // 変更後の在庫マイナスチェック
     if (t.type === '出庫' || t.type === '代替出庫' || t.type === 'ダメージ') {
       let currentStock = { ...startStock };
       transactions.forEach(item => {
-        if (item.id !== id) { // 自分自身を除く
+        if (item.id !== id) {
           if (item.type === '入庫') currentStock[item.date] = (currentStock[item.date] || 0) + item.qty;
           else currentStock[item.date] = (currentStock[item.date] || 0) - item.qty;
         }
@@ -966,13 +1065,12 @@
   }
 
   function deleteTx(id) {
-    let t = transactions.find(item => item.id !== id);
-    t = transactions.find(item => item.id === id);
+    let t = transactions.find(item => item.id === id);
     if (!t) return;
 
     if (!confirm(`本当にこのデータを削除してもよろしいですか？\n[${t.type}] ${t.date} (${t.qty} 箱)`)) return;
 
-    // 削除によって後続データの整合性が崩れて在庫マイナスにならないかのチェック
+    // 入庫データ削除時の在庫マイナス連鎖チェック
     if (t.type === '入庫') {
       let currentStock = { ...startStock };
       let tempTx = transactions.filter(item => item.id !== id);
@@ -1008,7 +1106,6 @@
       csvContent += `${t.status},${t.type},${t.date},${t.qty}\n`;
     });
 
-    // 操作履歴ログは制限なくすべてCSVに出力
     csvContent += "\n--- 管理者システム操作ログ ---\n";
     csvContent += "操作日時,アクション,変更詳細\n";
     systemLogs.forEach(log => {
