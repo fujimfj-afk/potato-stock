@@ -185,26 +185,6 @@
       color: #27ae60;
     }
 
-    /* ログ履歴リストのスタイル */
-    .log-list {
-      max-height: 180px;
-      overflow-y: auto;
-      background: #fafafa;
-      border: 1px dashed #ccc;
-      padding: 10px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 0.8rem;
-      line-height: 1.4;
-    }
-    .log-item {
-      border-bottom: 1px solid #eee;
-      padding: 4px 0;
-    }
-    .log-item:last-child {
-      border-bottom: none;
-    }
-
     /* ユーティリティ */
     .hidden {
       display: none !important;
@@ -224,6 +204,7 @@
 
 <div class="app-container">
   
+  <!-- ==================== HEADER ==================== -->
   <header id="app-header">
     <button class="back-btn hidden" id="back-button" onclick="goBack()">◀ メニューに戻る</button>
     <span id="header-title">ポテト在庫システム（テスト版）</span>
@@ -231,15 +212,19 @@
 
   <div class="content">
     
+    <!-- メッセージ通知エリア -->
     <div id="alert-msg" class="alert-success hidden"></div>
 
+    <!-- ==================== MAIN MENU ==================== -->
     <div id="view-menu" class="view">
       <button class="btn" onclick="switchView('view-driver')">📦 1. 在庫確認・ダメージ報告</button>
       <button class="btn" onclick="switchView('view-leader')">👥 2. 最終チェック（リーダー用）</button>
       <button class="btn btn-secondary" onclick="switchView('view-admin-auth')">🔑 3. 管理者メニュー</button>
     </div>
 
+    <!-- ==================== 1. 在庫確認・ダメージ報告 (現場用) ==================== -->
     <div id="view-driver" class="view hidden">
+      <!-- 本日の引当後在庫 -->
       <div class="card">
         <div class="card-title">■ 📊 本日の引当後在庫</div>
         <div class="stock-summary">
@@ -267,17 +252,20 @@
             </tr>
           </thead>
           <tbody id="driver-stock-table-body">
-            </tbody>
+            <!-- 動的挿入 -->
+          </tbody>
         </table>
       </div>
 
+      <!-- ダメージ報告入力 -->
       <div class="card">
         <div class="card-title">⚠️ ダメージ報告入力</div>
         
         <div class="form-group">
           <label>(1) 賞味期限（ダメージ品）</label>
           <select class="form-control" id="dmg-target-date" onchange="syncReplenishDate()">
-            </select>
+            <!-- 動的挿入 -->
+          </select>
         </div>
 
         <div class="form-group">
@@ -288,13 +276,15 @@
         <div class="form-group">
           <label>(3) 補充の賞味期限</label>
           <select class="form-control" id="dmg-rep-date">
-            </select>
+            <!-- 動的挿入 -->
+          </select>
         </div>
 
         <button class="btn" onclick="submitDamageReport()">📤 ダメージ報告を登録する</button>
       </div>
     </div>
 
+    <!-- ==================== 2. 最終チェック（リーダー用） ==================== -->
     <div id="view-leader" class="view hidden">
       <div class="card">
         <div class="card-title">■ 確定待ちデータ</div>
@@ -309,7 +299,8 @@
             </tr>
           </thead>
           <tbody id="leader-pending-body">
-            </tbody>
+            <!-- 動的挿入 -->
+          </tbody>
         </table>
       </div>
 
@@ -317,6 +308,7 @@
       
       <button class="btn btn-secondary" onclick="toggleHistory()">⏳ これまでの確定履歴を表示する</button>
 
+      <!-- 確定履歴一覧 -->
       <div class="card hidden" id="history-section">
         <div class="card-title">📋 確定履歴一覧（本日処理したもの）</div>
         <table>
@@ -330,23 +322,27 @@
             </tr>
           </thead>
           <tbody id="history-table-body">
-            </tbody>
+            <!-- 動的挿入 -->
+          </tbody>
         </table>
       </div>
     </div>
 
+    <!-- ==================== 3. 管理者メニュー：認証 ==================== -->
     <div id="view-admin-auth" class="view hidden">
       <div class="card">
         <div class="card-title">🔑 パスワード認証</div>
         <div class="form-group">
-          <input type="password" class="form-control" id="admin-pass" placeholder="パスワードを入力">
+          <input type="password" class="form-control" id="admin-pass" placeholder="パスワードを入力 (1234)">
         </div>
         <button class="btn" onclick="unlockAdmin()">🔓 ロック解除</button>
       </div>
     </div>
 
+    <!-- ==================== 3. 管理者メニュー：本体 ==================== -->
     <div id="view-admin-main" class="view hidden">
       
+      <!-- 本日の入出庫 登録・変更 -->
       <div class="card">
         <div class="card-title">📥📤 本日の入出庫 登録・変更</div>
         
@@ -361,7 +357,8 @@
         <div class="form-group">
           <label>(2) 賞味期限</label>
           <select class="form-control" id="admin-io-date">
-            </select>
+            <!-- 動的挿入 -->
+          </select>
         </div>
         <div class="form-group">
           <label>(3) 数量</label>
@@ -378,12 +375,13 @@
         <button class="btn btn-sm" onclick="submitAdminPaste()">📋 一括登録を実行</button>
       </div>
 
+      <!-- データ出力 -->
       <div class="card">
-        <div class="card-title">💾 データ管理</div>
+        <div class="card-title">💾 データ出力</div>
         <button class="btn" onclick="downloadCSV()">📥 CSVファイルでダウンロード</button>
-        <button class="btn btn-secondary" style="background:#c0392b;" onclick="resetLocalStorage()">⚠️ テストデータをすべて初期化する</button>
       </div>
 
+      <!-- 確定データ修正 -->
       <div class="card">
         <div class="card-title">✏️ 確定データ修正</div>
         <table>
@@ -396,15 +394,9 @@
             </tr>
           </thead>
           <tbody id="admin-modify-body">
-            </tbody>
+            <!-- 動的挿入 -->
+          </tbody>
         </table>
-      </div>
-
-      <div class="card">
-        <div class="card-title">📜 管理者システムログ（操作履歴）</div>
-        <div class="log-list" id="admin-log-list">
-          <div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>
-        </div>
       </div>
 
     </div>
@@ -413,73 +405,29 @@
 </div>
 
 <script>
-  // ==================== データの読み込み・保存 (localStorage) ====================
-  const defaultStartStock = {
+  // ==================== 初期データ設定 ====================
+  // 本日の初期（開始時）在庫状態
+  let startStock = {
     "2027/04/01": 10,
     "2027/05/01": 500,
-    "2027/06/15": 0
+    "2027/06/15": 0 // 本日新しく入る可能性のある枠
   };
 
-  const defaultCommitHistory = [
+  // 本日の入出庫トランザクション
+  let transactions = [];
+
+  // 確定完了した最終送信ログ（初期表示用ダミーデータ含む）
+  let commitHistory = [
     { time: "07/16 11:30", type: "ダメージ", date: "2027/04/01", qty: 10 },
     { time: "07/16 11:30", type: "代替出庫", date: "2027/05/01", qty: 10 }
   ];
 
-  let startStock = loadData("startStock", defaultStartStock);
-  let transactions = loadData("transactions", []);
-  let commitHistory = loadData("commitHistory", defaultCommitHistory);
-  let systemLogs = loadData("systemLogs", []); // 管理者操作ログ用配列
-
+  // 画面遷移管理
   let viewHistory = ['view-menu'];
-
-  function loadData(key, defaultValue) {
-    let raw = localStorage.getItem(key);
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch(e) {
-        return defaultValue;
-      }
-    }
-    return defaultValue;
-  }
-
-  function saveData() {
-    localStorage.setItem("startStock", JSON.stringify(startStock));
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-    localStorage.setItem("commitHistory", JSON.stringify(commitHistory));
-    localStorage.setItem("systemLogs", JSON.stringify(systemLogs));
-  }
-
-  function resetLocalStorage() {
-    if (confirm("これまでに保存されたすべての入力データ・履歴・システムログがリセットされ、初期状態に戻ります。よろしいですか？")) {
-      localStorage.clear();
-      startStock = { ...defaultStartStock };
-      transactions = [];
-      commitHistory = [ ...defaultCommitHistory ];
-      systemLogs = [];
-      saveData();
-      updateSystemState();
-      alert("データを完全にリセットしました。");
-      switchView('view-menu');
-    }
-  }
 
   window.onload = function() {
     updateSystemState();
   };
-
-  // ==================== ログの生成関数 ====================
-  function addSystemLog(actionType, message) {
-    let now = new Date();
-    let timeStr = `${("0" + (now.getMonth() + 1)).slice(-2)}/${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}`;
-    systemLogs.unshift({
-      time: timeStr,
-      action: actionType, // '修正' or '削除' or '一括登録'
-      text: message
-    });
-    saveData();
-  }
 
   // ==================== 状態更新 ＆ 画面反映 ====================
   function updateSystemState() {
@@ -487,6 +435,7 @@
     let sumIn = 0;
     let sumOut = 0;
 
+    // トランザクションを集計
     transactions.forEach(t => {
       if (t.type === '入庫') {
         currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
@@ -541,7 +490,7 @@
     if (currentRepVal) selectRep.value = currentRepVal;
     if (currentAdminVal) selectAdmin.value = currentAdminVal;
 
-    // --- リーダー画面の更新 ---
+    // --- リーダー画面の更新（バッジ表示対応） ---
     let pendingBody = document.getElementById('leader-pending-body');
     pendingBody.innerHTML = '';
     let pendingTx = transactions.filter(t => t.status === 'pending');
@@ -564,7 +513,7 @@
       });
     }
 
-    // 確定履歴テーブル
+    // 確定履歴テーブル（✅報告済バッジを付与）
     let historyBody = document.getElementById('history-table-body');
     historyBody.innerHTML = '';
     commitHistory.forEach(h => {
@@ -597,22 +546,6 @@
           </td>
         </tr>`;
         adminModifyBody.innerHTML += row;
-      });
-    }
-
-    // --- システム操作ログの更新表示 ---
-    let logListDiv = document.getElementById('admin-log-list');
-    if (systemLogs.length === 0) {
-      logListDiv.innerHTML = `<div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>`;
-    } else {
-      logListDiv.innerHTML = '';
-      systemLogs.forEach(log => {
-        let color = log.action === '削除' ? '#e74c3c' : (log.action === '修正' ? '#f39c12' : '#27ae60');
-        logListDiv.innerHTML += `<div class="log-item">
-          <span style="color:#888;">[${log.time}]</span> 
-          <span style="color:${color}; font-weight:bold;">[${log.action}]</span> 
-          ${log.text}
-        </div>`;
       });
     }
   }
@@ -649,7 +582,6 @@
       status: 'pending'
     });
 
-    saveData();
     updateSystemState();
     showAlert("一時ダメージ報告を登録しました！リーダー確認をお待ちください。");
     switchView('view-menu');
@@ -676,7 +608,6 @@
       });
     });
 
-    saveData();
     updateSystemState();
     showAlert("データを送信し、一括確定（業務終了）しました！");
     switchView('view-menu');
@@ -719,8 +650,6 @@
       status: 'committed'
     });
 
-    addSystemLog("手動登録", `${date} の [${type}] を 新規に ${qty} 箱 追加登録しました。`);
-    saveData();
     updateSystemState();
     showAlert(`管理データに 【${type}: ${date} - ${qty}ケース】 を追加しました`);
   }
@@ -755,14 +684,11 @@
       }
     });
 
-    addSystemLog("一括登録", `コピペ機能により取引データを一括で ${count} 件 追加登録しました。`);
-    saveData();
     updateSystemState();
     document.getElementById('admin-paste-area').value = '';
     showAlert(`貼り付けデータから ${count} 件を一括登録しました！`);
   }
 
-  // 確定データ修正（システムログへの自動記録対応）
   function editTx(id) {
     let t = transactions.find(item => item.id === id);
     if (!t) return;
@@ -776,29 +702,14 @@
       return;
     }
 
-    let oldQty = t.qty;
     t.qty = newQty;
-
-    // 操作履歴ログへの登録
-    addSystemLog("修正", `${t.date} [${t.type}] 数量: ${oldQty} 箱 ──➔ 【 ${newQty} 箱 】に変更しました。`);
-
-    saveData();
     updateSystemState();
     showAlert("数量の修正を反映しました");
   }
 
-  // 確定データ削除（システムログへの自動記録対応）
   function deleteTx(id) {
-    let t = transactions.find(item => item.id === id);
-    if (!t) return;
-
-    if (!confirm(`本当にこのデータを削除してもよろしいですか？\n[${t.type}] ${t.date} (${t.qty} 箱)`)) return;
-    
-    // 操作履歴ログへの登録
-    addSystemLog("削除", `${t.date} [${t.type}] のデータ（${t.qty} 箱）を削除しました。`);
-
+    if (!confirm("このデータを削除してもよろしいですか？")) return;
     transactions = transactions.filter(item => item.id !== id);
-    saveData();
     updateSystemState();
     showAlert("データを削除しました");
   }
@@ -809,13 +720,6 @@
     
     transactions.forEach(t => {
       csvContent += `${t.status},${t.type},${t.date},${t.qty}\n`;
-    });
-
-    // 操作ログもCSVの別セクションとして出力
-    csvContent += "\n--- 管理者システム操作ログ ---\n";
-    csvContent += "操作日時,アクション,変更詳細\n";
-    systemLogs.forEach(log => {
-      csvContent += `"${log.time}","${log.action}","${log.text}"\n`;
     });
 
     let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
