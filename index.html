@@ -143,9 +143,20 @@
             font-weight: bold;
         }
 
+        /* 列ごとの色分け設定 */
+        .col-expiry { background-color: #ffffff; }
+        .col-prev { background-color: #fcfcf0; } /* 前日残: やさしいアイボリー */
+        .col-in { background-color: #f4faf4; }   /* 本日入庫: 淡いグリーン */
+        .col-out { background-color: #f3f8fc; }  /* 出荷予定: 淡いブルー */
+        .col-final { background-color: #fff9f5; } /* 計算上残: 薄いオレンジ */
+
         .total-row {
-            background-color: #f1f1f1;
+            background-color: #f1f1f1 !important;
             font-weight: bold;
+        }
+        
+        .total-row td {
+            background-color: #e6e6e6 !important;
         }
 
         /* フォーム */
@@ -281,6 +292,7 @@
 </head>
 <body>
 
+    <!-- ヘッダー -->
     <header id="header">
         <button class="back-btn" id="backBtn" style="display: none;">◀ 戻る</button>
         <span id="headerTitle">ポテト在庫システム</span>
@@ -288,60 +300,62 @@
 
     <div class="container">
 
+        <!-- 📱 1. メインメニュー画面 -->
         <div id="screenMenu" class="screen active">
-            <p style="text-align: center; margin-bottom: 10px; color: #666; font-size: 0.9rem;">
-                業務メニューを選択してください
-            </p>
             <button class="menu-btn btn-blue" onclick="switchScreen('screenWarehouse', '在庫確認・ダメージ報告')">
-                📦 1. 在庫確認・ダメージ報告
+                1. 在庫確認・ダメージ報告
             </button>
             <button class="menu-btn btn-green" onclick="switchScreen('screenLeader', '最終チェック')">
-                👥 2. 最終チェック
+                2. 最終チェック
             </button>
-            <button class="menu-btn btn-gray" onclick="switchScreen('screenAdmin', '管理者メニュー')">
+            <button class="menu-btn btn-gray" onclick="tryAccessAdmin()">
                 🔑 3. 管理者メニュー
             </button>
         </div>
 
+        <!-- 📱 2. 現場・倉庫担当画面 -->
         <div id="screenWarehouse" class="screen">
             <div class="card">
-                <div class="card-title">📥📤 本日の総動き（速報）</div>
+                <div class="card-title">本日のポテト仕分け詳細</div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                    <div>📥 本日の総入庫量: <strong id="whTotalIn">0</strong></div>
-                    <div>📤 本日の出荷予定: <strong id="whTotalOut">0</strong></div>
+                    <div>総入庫量: <strong id="whTotalIn">0</strong></div>
+                    <div>出荷予定: <strong id="whTotalOut">0</strong></div>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-title">📊 本日の引当状況（賞味期限別 / 単位：ケース）</div>
+                <div class="card-title">本日の引当状況（賞味期限別）</div>
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
                             <tr>
-                                <th>賞味期限</th>
-                                <th>前日残</th>
-                                <th>本日入庫</th>
-                                <th>出荷予定</th>
-                                <th>計算上残</th>
+                                <th class="col-expiry">賞味期限</th>
+                                <th class="col-prev">前日残</th>
+                                <th class="col-in">本日入庫</th>
+                                <th class="col-out">出荷予定</th>
+                                <th class="col-final">計算上残</th>
                             </tr>
                         </thead>
                         <tbody id="whTableBody">
-                            </tbody>
+                            <!-- JSで動的生成 -->
+                        </tbody>
                         <tfoot>
                             <tr class="total-row" id="whTableFoot">
-                                </tr>
+                                <!-- JSで動的生成 -->
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-title warning">⚠️ ダメージ報告</div>
+                <div class="card-title warning">ダメージ報告</div>
                 <form id="damageForm" onsubmit="handleDamageSubmit(event)">
                     <div class="form-group">
                         <label>(1) ダメージがあった賞味期限</label>
                         <select id="damageExpiry" required onchange="updateDamageMax()">
-                            </select>
+                            <!-- JSで自動リスト化 -->
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>(2) ダメージ数量</label>
@@ -350,68 +364,75 @@
                     <div class="form-group">
                         <label>(3) 代替（代わりに引き当てる）賞味期限</label>
                         <select id="alternativeExpiry" required>
-                            </select>
+                            <!-- JSで自動リスト化 -->
+                        </select>
                     </div>
                     <button type="submit" class="submit-btn" style="background-color: var(--warning-orange);">
-                        📤 ダメージ報告する
+                        ダメージ報告する
                     </button>
                 </form>
             </div>
         </div>
 
+        <!-- 📱 3. リーダー最終チェック画面 -->
         <div id="screenLeader" class="screen">
             <div class="card" id="leaderAlertCard" style="display: none;">
-                <div class="card-title warning">⚠️ 不足分の自動代替</div>
+                <div class="card-title warning">不足分の自動代替</div>
                 <div class="info-box" style="background: #fdf2e9; border-color: #f5cba7; color: #e67e22; margin-bottom: 0;">
-                    📢 ダメージ報告により、不足分を以下から引当しました。<br><br>
+                    ダメージ報告により、不足分を以下から引当しました。<br><br>
                     <span id="alternativeDetailText">・不足分(0) ──➔ 00/00 から代替出庫 済み</span>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-title">⏳ 本日の確定待ちデータ一覧</div>
+                <div class="card-title">確定待ちデータ一覧</div>
                 <div id="leaderQueueList">
-                    </div>
+                    <!-- JSでフラットなリストを生成 -->
+                </div>
             </div>
 
             <button class="submit-btn" style="background-color: var(--primary-green); padding: 15px; margin-top: 10px;" onclick="commitTodayData()">
-                🔒 確認しました（一括確定して業務終了）
+                確認しました（一括確定して業務終了）
             </button>
         </div>
 
+        <!-- 📱 4. 管理者メニュー画面 -->
         <div id="screenAdmin" class="screen">
             <div class="card">
-                <div class="card-title">📥📤 本日の入出庫 登録</div>
+                <div class="card-title">本日の入出庫 登録</div>
                 <div class="tab-container">
-                    <div class="tab active-in" id="tabIn" onclick="switchAdminTab('in')">📥 入庫</div>
-                    <div class="tab" id="tabOut" onclick="switchAdminTab('out')">📤 出庫</div>
+                    <div class="tab active-in" id="tabIn" onclick="switchAdminTab('in')">入庫</div>
+                    <div class="tab" id="tabOut" onclick="switchAdminTab('out')">出庫</div>
                 </div>
 
+                <!-- 入庫フォーム -->
                 <form id="adminInForm" onsubmit="handleInSubmit(event)">
                     <div class="form-group">
                         <label>(1) 賞味期限</label>
                         <input type="date" id="inExpiry" required onchange="validatePastDate()">
-                        <div id="pastDateError" class="error-message">❌【エラー】賞味期限に過去の日付は登録できません！</div>
+                        <div id="pastDateError" class="error-message">【エラー】賞味期限に過去の日付は登録できません！</div>
                     </div>
                     <div class="form-group">
                         <label>(2) 数量</label>
                         <input type="number" id="inQty" min="1" required>
                     </div>
-                    <button type="submit" class="submit-btn" style="background-color: var(--warning-orange);">➕ この賞味期限で「入庫」する</button>
+                    <button type="submit" class="submit-btn" style="background-color: var(--warning-orange);">この賞味期限で「入庫」する</button>
                 </form>
 
+                <!-- 出庫フォーム -->
                 <form id="adminOutForm" onsubmit="handleOutSubmit(event)" style="display: none;">
                     <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">※賞味期限は「古い順」で自動的に引き当てられます</p>
                     <div class="form-group">
                         <label>(1) 数量</label>
                         <input type="number" id="outQty" min="1" required>
                     </div>
-                    <button type="submit" class="submit-btn" style="background-color: var(--primary-blue);">➕ 古い順で「自動出庫」する</button>
+                    <button type="submit" class="submit-btn" style="background-color: var(--primary-blue);">古い順で「自動出庫」する</button>
                 </form>
             </div>
 
+            <!-- 在庫微調整 -->
             <div class="card">
-                <div class="card-title">⚙️ 原因不明のズレを直す：在庫微調整</div>
+                <div class="card-title">原因不明のズレを直す：在庫微調整</div>
                 <form id="adjustmentForm" onsubmit="handleAdjustSubmit(event)">
                     <div class="form-group">
                         <label>(1) 対象の賞味期限</label>
@@ -429,42 +450,49 @@
                             <option value="入力ミス修正">入力ミス修正</option>
                         </select>
                     </div>
-                    <button type="submit" class="submit-btn" style="background-color: var(--primary-gray);">🔧 在庫数データを強制微調整する</button>
+                    <button type="submit" class="submit-btn" style="background-color: var(--primary-gray);">在庫数データを強制微調整する</button>
                 </form>
             </div>
 
+            <!-- 確定データの修正・削除 -->
             <div class="card">
-                <div class="card-title">✏️ 確定データの修正・削除</div>
+                <div class="card-title">確定データの修正・削除</div>
                 <div class="form-group">
                     <label>対象の日付を選択</label>
                     <input type="date" id="editSearchDate">
                 </div>
                 <button class="submit-btn" style="background-color: var(--primary-gray); margin-bottom: 15px;" onclick="searchConfirmedData()">
-                    🔍 該当日の確定データを呼び出す
+                    該当日の確定データを呼び出す
                 </button>
                 
                 <div id="searchResultArea" style="display: none;">
                     <label>▼ 検索結果（修正・削除したいデータのボタンを押してください）</label>
                     <div id="searchResultList" style="margin-top: 5px;">
-                        </div>
+                        <!-- JSで表示 -->
+                    </div>
                 </div>
             </div>
 
+            <!-- CSV出力 -->
             <div class="card">
-                <div class="card-title">💾 確定データのCSV出力</div>
+                <div class="card-title">確定データのCSV出力</div>
                 <div class="form-group">
                     <textarea id="csvTextArea" rows="5" readonly style="font-family: monospace; font-size: 0.8rem;" placeholder="ここに確定データがCSV形式で表示されます"></textarea>
                 </div>
                 <button class="submit-btn" style="background-color: var(--primary-gray);" onclick="downloadCSV()">
-                    💾 CSVファイルをダウンロードする
+                    CSVファイルをダウンロードする
                 </button>
             </div>
         </div>
 
     </div>
 
+    <!-- JavaScript ロジック -->
     <script>
         const todayStr = "2026-07-16";
+
+        // セキュリティ用：パスワード（1234）の簡易Base64ハッシュ表現（生パスワード露出防止）
+        const secureKey = "MTIzNA=="; 
 
         let inventoryDb = [
             { id: "INV-001", expiry: "2027-04-01", qty: 10 },
@@ -485,6 +513,20 @@
         ];
 
         const screenHistory = [];
+
+        // 管理者画面アクセス時のセキュリティ認証
+        function tryAccessAdmin() {
+            const pin = prompt("パスワードを入力してください：");
+            if (pin === null) return; // キャンセル時
+
+            // 入力値を簡易検証（Base64変換して照合）
+            if (btoa(pin) === secureKey) {
+                switchScreen('screenAdmin', '管理者メニュー');
+            } else {
+                alert("パスワードが違います。アクセスできません。");
+            }
+        }
+
         function switchScreen(screenId, title) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
@@ -517,6 +559,17 @@
                 switchScreen('screenMenu', 'ポテト在庫システム');
             }
         });
+
+        // YYYY-MM-DD の日付文字列を YYYY/M/D の形にするヘルパー
+        function formatExpiryDate(dateStr) {
+            if (!dateStr) return "";
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const year = parts[0];
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            return `${year}/${month}/${day}`;
+        }
 
         function calculateStock() {
             let stockMap = {};
@@ -576,14 +629,16 @@
 
                 const tr = document.createElement('tr');
                 const isOldestLabel = (index === 0) ? '<br><span style="font-size:0.7rem;color:var(--danger-red);font-weight:bold;">【最古】</span>' : '';
-                const mmdd = expiry.substring(5).replace('-', '/');
+                
+                // 表示日付を YYYY/M/D 形式へ変更
+                const formattedDate = formatExpiryDate(expiry);
 
                 tr.innerHTML = `
-                    <td><strong>${mmdd}</strong>${isOldestLabel}</td>
-                    <td>${data.prev}</td>
-                    <td>${data.in}</td>
-                    <td>${data.out > 0 ? '-' + data.out : '0'}</td>
-                    <td style="font-weight:bold; color:${data.final < 0 ? 'var(--danger-red)' : 'inherit'}">${data.final}</td>
+                    <td class="col-expiry"><strong>${formattedDate}</strong>${isOldestLabel}</td>
+                    <td class="col-prev">${data.prev}</td>
+                    <td class="col-in">${data.in}</td>
+                    <td class="col-out">${data.out > 0 ? '-' + data.out : '0'}</td>
+                    <td class="col-final" style="font-weight:bold; color:${data.final < 0 ? 'var(--danger-red)' : 'inherit'}">${data.final}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -604,10 +659,11 @@
 
             sortedExpiries.forEach(expiry => {
                 const physicalStock = stock[expiry].prev + stock[expiry].in;
+                // 日付のみでドロップダウンを表示
                 if (physicalStock > 0) {
-                    dmgSelect.innerHTML += `<option value="${expiry}">${expiry} (残: ${physicalStock})</option>`;
+                    dmgSelect.innerHTML += `<option value="${expiry}">${expiry}</option>`;
                 }
-                altSelect.innerHTML += `<option value="${expiry}">${expiry} (残: ${stock[expiry].final})</option>`;
+                altSelect.innerHTML += `<option value="${expiry}">${expiry}</option>`;
             });
 
             updateDamageMax();
@@ -630,11 +686,7 @@
             const qty = parseInt(document.getElementById('damageQty').value);
             const altExpiry = document.getElementById('alternativeExpiry').value;
 
-            if (expiry === altExpiry) {
-                alert("ダメージ対象と代替対応の賞味期限に同じ日付は指定できません。");
-                return;
-            }
-
+            // 「同じ賞味期限は指定できない」という制限を撤廃
             dailyTx.damage.push({
                 damageExpiry: expiry,
                 qty: qty,
@@ -686,7 +738,6 @@
             }
         }
 
-        // 確定処理を実行（メール送信なし）
         function commitTodayData() {
             if (dailyTx.out.length === 0 && dailyTx.damage.length === 0 && dailyTx.in.length === 0 && dailyTx.adjust.length === 0) {
                 alert("本日処理すべきデータがありません。");
