@@ -1,1168 +1,926 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ポテト在庫システム（テスト版）</title>
-  <style>
-    /* 全体共通デザイン */
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f4f6f9;
-      color: #333;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-    }
-    .app-container {
-      width: 100%;
-      max-width: 480px;
-      background-color: #fff;
-      min-height: 100vh;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      background-color: #2c3e50;
-      color: #fff;
-      padding: 15px 10px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 54px;
-      box-sizing: border-box;
-    }
-    .back-btn {
-      position: absolute;
-      left: 10px;
-      background: rgba(255,255,255,0.15);
-      border: none;
-      color: #fff;
-      font-size: 0.8rem;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    #header-title {
-      margin-left: auto;
-      margin-right: auto;
-      max-width: 65%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 1rem;
-    }
-    .content {
-      padding: 15px;
-      flex: 1;
-    }
-    .card {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    
-    /* メニュー画面専用：ハッキリ識別カラー */
-    .btn-menu-driver {
-      background-color: #2980b9 !important; /* ハッキリした青 */
-    }
-    .btn-menu-driver:active {
-      background-color: #1f6391 !important;
-    }
-    .btn-menu-leader {
-      background-color: #27ae60 !important; /* ハッキリした緑 */
-    }
-    .btn-menu-leader:active {
-      background-color: #1e8449 !important;
-    }
-    .btn-menu-admin {
-      background-color: #7f8c8d !important; /* ハッキリしたグレー */
-    }
-    .btn-menu-admin:active {
-      background-color: #626567 !important;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポテト在庫システム（決定版）</title>
+    <style>
+        :root {
+            --primary-blue: #007bff;
+            --primary-green: #28a745;
+            --primary-gray: #6c757d;
+            --bg-light: #f8f9fa;
+            --warning-orange: #fd7e14;
+            --danger-red: #dc3545;
+        }
 
-    /* 現場画面：色味分け用スタイル */
-    .card-driver-stock {
-      border: 1px solid #a9cce3;
-      background: #f7fbfd;
-    }
-    .card-driver-stock .card-title {
-      border-left: 4px solid #2980b9;
-      color: #1b4f72;
-    }
-    .card-driver-dmg {
-      border: 1px solid #f5cba7;
-      background: #fdfaf7;
-    }
-    .card-driver-dmg .card-title {
-      border-left: 4px solid #e67e22;
-      color: #7e5109;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
 
-    .card-title {
-      font-weight: bold;
-      margin-bottom: 10px;
-      border-left: 4px solid #7f8c8d;
-      padding-left: 8px;
-      color: #2c3e50;
-    }
-    
-    /* ボタンデザイン */
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: bold;
-      text-align: center;
-      cursor: pointer;
-      text-decoration: none;
-      box-sizing: border-box;
-      margin-bottom: 15px;
-    }
-    .btn-orange {
-      background-color: #e67e22;
-    }
-    .btn-orange:active {
-      background-color: #d35400;
-    }
-    .btn-secondary {
-      background-color: #7f8c8d;
-    }
-    .btn-secondary:active {
-      background-color: #2c3e50;
-    }
-    .btn-sm {
-      padding: 5px 10px;
-      font-size: 0.8rem;
-      width: auto;
-      display: inline-block;
-      margin: 2px;
-    }
+        body {
+            background-color: #f0f2f5;
+            padding: 10px;
+            max-width: 480px;
+            margin: 0 auto;
+            color: #333;
+        }
 
-    /* 手動入出庫用のタブスタイル（カラーハッキリ化） */
-    .tab-group {
-      display: flex;
-      border-bottom: 2px solid #ddd;
-      margin-bottom: 15px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 12px 10px;
-      text-align: center;
-      background: #f4f6f9;
-      border: 1px solid #ddd;
-      border-bottom: none;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
-    /* 入庫タブ選択時（オレンジ） */
-    .tab-btn#tab-in.active {
-      background: #fff3e0;
-      border-top: 4px solid #e67e22;
-      border-bottom: 2px solid #fff3e0;
-      margin-bottom: -2px;
-      color: #d35400;
-    }
-    /* 出庫タブ選択時（青） */
-    .tab-btn#tab-out.active {
-      background: #e3f2fd;
-      border-top: 4px solid #2980b9;
-      border-bottom: 2px solid #e3f2fd;
-      margin-bottom: -2px;
-      color: #0d47a1;
-    }
+        header {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+            position: relative;
+        }
 
-    /* 登録ボタンの動的色切り替え */
-    .btn-action-in {
-      background-color: #e67e22 !important;
-    }
-    .btn-action-in:active {
-      background-color: #d35400 !important;
-    }
-    .btn-action-out {
-      background-color: #2980b9 !important;
-    }
-    .btn-action-out:active {
-      background-color: #1f6391 !important;
-    }
+        .back-btn {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
 
-    /* フォーム周り */
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .form-control {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
+        .container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
 
-    /* テーブルデザイン */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 0.85rem;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #f8f9fa;
-      font-weight: bold;
-    }
+        .screen {
+            display: none;
+        }
 
-    /* ステータスバッジのデザイン */
-    .badge {
-      display: inline-block;
-      padding: 3px 6px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      border-radius: 4px;
-    }
-    .badge-pending {
-      background-color: #ffe6d5;
-      color: #d35400;
-      border: 1px solid #ffccab;
-    }
-    .badge-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
+        .screen.active {
+            display: block;
+        }
 
-    /* 在庫ダッシュボード用 */
-    .stock-summary {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .summary-box {
-      background: #ebf5fb;
-      border: 1px solid #a9cce3;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-    }
-    .summary-box.total {
-      grid-column: span 2;
-      background: #eaf2f8;
-      border: 1px solid #85c1e9;
-    }
-    .large-num {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #2980b9;
-    }
-    .summary-box.total .large-num {
-      color: #1f618d;
-    }
+        /* メインメニュー */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
+        }
 
-    /* ログ履歴リストのスタイル */
-    .log-list {
-      max-height: 220px;
-      overflow-y: auto;
-      background: #fafafa;
-      border: 1px dashed #ccc;
-      padding: 10px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 0.8rem;
-      line-height: 1.4;
-    }
-    .log-item {
-      border-bottom: 1px solid #eee;
-      padding: 6px 0;
-    }
-    .log-item:last-child {
-      border-bottom: none;
-    }
+        .menu-btn::after {
+            content: "▶";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
 
-    /* ユーティリティ */
-    .hidden {
-      display: none !important;
-    }
-    .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      font-size: 0.9rem;
-      text-align: center;
-    }
-  </style>
+        .menu-btn:active {
+            opacity: 0.9;
+        }
+
+        .btn-blue { background-color: var(--primary-blue); }
+        .btn-green { background-color: var(--primary-green); }
+        .btn-gray { background-color: var(--primary-gray); }
+
+        /* セクション・カード */
+        .card {
+            background: var(--bg-light);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #444;
+            border-left: 4px solid var(--primary-blue);
+            padding-left: 8px;
+        }
+
+        .card-title.warning {
+            border-left-color: var(--warning-orange);
+        }
+
+        /* テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #eee;
+            font-weight: bold;
+        }
+
+        .total-row {
+            background-color: #f1f1f1;
+            font-weight: bold;
+        }
+
+        /* フォーム */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-blue);
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        .submit-btn:active {
+            background-color: #0056b3;
+        }
+
+        /* 管理者用タブ */
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            background: #eee;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab.active-in {
+            background: var(--warning-orange);
+            color: white;
+            border-color: var(--warning-orange);
+        }
+
+        .tab.active-out {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        /* エラー・警告メッセージ */
+        .error-message {
+            color: var(--danger-red);
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .info-box {
+            background: #e9f7ef;
+            border: 1px solid #d4efdf;
+            color: #1e8449;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        /* 確定待ちリスト */
+        .queue-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .queue-item span {
+            font-weight: 500;
+        }
+
+        /* 修正・削除リスト */
+        .data-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-actions button {
+            padding: 4px 8px;
+            margin-left: 5px;
+            font-size: 0.75rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn-edit { background-color: var(--warning-orange); color: white; }
+        .btn-delete { background-color: var(--danger-red); color: white; }
+    </style>
 </head>
 <body>
 
-<div class="app-container">
-  
-  <header id="app-header">
-    <button class="back-btn hidden" id="back-button" onclick="goBack()">◀ 戻る</button>
-    <span id="header-title">ポテト在庫システム（テスト版）</span>
-  </header>
+    <header id="header">
+        <button class="back-btn" id="backBtn" style="display: none;">◀ 戻る</button>
+        <span id="headerTitle">ポテト在庫システム</span>
+    </header>
 
-  <div class="content">
-    
-    <div id="alert-msg" class="alert-success hidden"></div>
+    <div class="container">
 
-    <div id="view-menu" class="view">
-      <button class="btn btn-menu-driver" onclick="switchView('view-driver')">📦 1. 在庫確認・ダメージ報告</button>
-      <button class="btn btn-menu-leader" onclick="switchView('view-leader')">👥 2. 最終チェック（リーダー用）</button>
-      <button class="btn btn-menu-admin" onclick="switchView('view-admin-auth')">🔑 3. 管理者メニュー</button>
-    </div>
-
-    <div id="view-driver" class="view hidden">
-      <div class="card card-driver-stock">
-        <div class="card-title">■ 📊 本日の引当後在庫</div>
-        <div class="stock-summary">
-          <div class="summary-box">
-            <div>📥 本日の総入庫量</div>
-            <div class="large-num" id="driver-sum-in">+0</div>
-          </div>
-          <div class="summary-box">
-            <div>📤 本日の総出庫量</div>
-            <div class="large-num" id="driver-sum-out">-0</div>
-          </div>
-          <div class="summary-box total">
-            <div>現在の引当後総在庫</div>
-            <div class="large-num" id="driver-total-stock">500 ケース</div>
-            <div style="font-size: 0.8rem; color:#666;" id="driver-start-stock">(本日開始時: 510 ケース)</div>
-          </div>
+        <div id="screenMenu" class="screen active">
+            <p style="text-align: center; margin-bottom: 10px; color: #666; font-size: 0.9rem;">
+                業務メニューを選択してください
+            </p>
+            <button class="menu-btn btn-blue" onclick="switchScreen('screenWarehouse', '在庫確認・ダメージ報告')">
+                📦 1. 在庫確認・ダメージ報告
+            </button>
+            <button class="menu-btn btn-green" onclick="switchScreen('screenLeader', '最終チェック')">
+                👥 2. 最終チェック
+            </button>
+            <button class="menu-btn btn-gray" onclick="switchScreen('screenAdmin', '管理者メニュー')">
+                🔑 3. 管理者メニュー
+            </button>
         </div>
 
-        <div style="font-weight: bold; font-size: 0.9rem; margin-top: 15px;">▼ 賞味期限ごとの引当・増減内訳</div>
-        <table>
-          <thead>
-            <tr>
-              <th>賞味期限</th>
-              <th>現在庫</th>
-            </tr>
-          </thead>
-          <tbody id="driver-stock-table-body">
-            </tbody>
-        </table>
-      </div>
+        <div id="screenWarehouse" class="screen">
+            <div class="card">
+                <div class="card-title">📥📤 本日の総動き（速報）</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <div>📥 本日の総入庫量: <strong id="whTotalIn">0</strong></div>
+                    <div>📤 本日の出荷予定: <strong id="whTotalOut">0</strong></div>
+                </div>
+            </div>
 
-      <div class="card card-driver-dmg">
-        <div class="card-title">⚠️ ダメージ報告入力</div>
-        
-        <div class="form-group">
-          <label>(1) 賞味期限（ダメージ品）</label>
-          <select class="form-control" id="dmg-target-date" onchange="syncReplenishDate()">
-            </select>
+            <div class="card">
+                <div class="card-title">📊 本日の引当状況（賞味期限別 / 単位：ケース）</div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>賞味期限</th>
+                                <th>前日残</th>
+                                <th>本日入庫</th>
+                                <th>出荷予定</th>
+                                <th>計算上残</th>
+                            </tr>
+                        </thead>
+                        <tbody id="whTableBody">
+                            </tbody>
+                        <tfoot>
+                            <tr class="total-row" id="whTableFoot">
+                                </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title warning">⚠️ ダメージ報告</div>
+                <form id="damageForm" onsubmit="handleDamageSubmit(event)">
+                    <div class="form-group">
+                        <label>(1) ダメージがあった賞味期限</label>
+                        <select id="damageExpiry" required onchange="updateDamageMax()">
+                            </select>
+                    </div>
+                    <div class="form-group">
+                        <label>(2) ダメージ数量</label>
+                        <input type="number" id="damageQty" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>(3) 代替（代わりに引き当てる）賞味期限</label>
+                        <select id="alternativeExpiry" required>
+                            </select>
+                    </div>
+                    <button type="submit" class="submit-btn" style="background-color: var(--warning-orange);">
+                        📤 ダメージ報告する
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label>(2) 数量 (ケース)</label>
-          <input type="number" class="form-control" id="dmg-qty" value="10" min="1">
+        <div id="screenLeader" class="screen">
+            <div class="card" id="leaderAlertCard" style="display: none;">
+                <div class="card-title warning">⚠️ 不足分の自動代替</div>
+                <div class="info-box" style="background: #fdf2e9; border-color: #f5cba7; color: #e67e22; margin-bottom: 0;">
+                    📢 ダメージ報告により、不足分を以下から引当しました。<br><br>
+                    <span id="alternativeDetailText">・不足分(0) ──➔ 00/00 から代替出庫 済み</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⏳ 本日の確定待ちデータ一覧</div>
+                <div id="leaderQueueList">
+                    </div>
+            </div>
+
+            <button class="submit-btn" style="background-color: var(--primary-green); padding: 15px; margin-top: 10px;" onclick="commitTodayData()">
+                🔒 確認しました（一括確定して業務終了）
+            </button>
         </div>
 
-        <div class="form-group">
-          <label>(3) 補充 of 賞味期限</label>
-          <select class="form-control" id="dmg-rep-date">
-            </select>
+        <div id="screenAdmin" class="screen">
+            <div class="card">
+                <div class="card-title">📥📤 本日の入出庫 登録</div>
+                <div class="tab-container">
+                    <div class="tab active-in" id="tabIn" onclick="switchAdminTab('in')">📥 入庫</div>
+                    <div class="tab" id="tabOut" onclick="switchAdminTab('out')">📤 出庫</div>
+                </div>
+
+                <form id="adminInForm" onsubmit="handleInSubmit(event)">
+                    <div class="form-group">
+                        <label>(1) 賞味期限</label>
+                        <input type="date" id="inExpiry" required onchange="validatePastDate()">
+                        <div id="pastDateError" class="error-message">❌【エラー】賞味期限に過去の日付は登録できません！</div>
+                    </div>
+                    <div class="form-group">
+                        <label>(2) 数量</label>
+                        <input type="number" id="inQty" min="1" required>
+                    </div>
+                    <button type="submit" class="submit-btn" style="background-color: var(--warning-orange);">➕ この賞味期限で「入庫」する</button>
+                </form>
+
+                <form id="adminOutForm" onsubmit="handleOutSubmit(event)" style="display: none;">
+                    <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">※賞味期限は「古い順」で自動的に引き当てられます</p>
+                    <div class="form-group">
+                        <label>(1) 数量</label>
+                        <input type="number" id="outQty" min="1" required>
+                    </div>
+                    <button type="submit" class="submit-btn" style="background-color: var(--primary-blue);">➕ 古い順で「自動出庫」する</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚙️ 原因不明のズレを直す：在庫微調整</div>
+                <form id="adjustmentForm" onsubmit="handleAdjustSubmit(event)">
+                    <div class="form-group">
+                        <label>(1) 対象の賞味期限</label>
+                        <select id="adjExpiry" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>(2) 調整する数量 (減らす時はマイナス、増やす時はプラス)</label>
+                        <input type="number" id="adjQty" required>
+                    </div>
+                    <div class="form-group">
+                        <label>(3) 調整の理由</label>
+                        <select id="adjReason">
+                            <option value="原因不明の棚卸ズレ">原因不明の棚卸ズレ</option>
+                            <option value="破損廃棄">破損廃棄</option>
+                            <option value="入力ミス修正">入力ミス修正</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn" style="background-color: var(--primary-gray);">🔧 在庫数データを強制微調整する</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title">✏️ 確定データの修正・削除</div>
+                <div class="form-group">
+                    <label>対象の日付を選択</label>
+                    <input type="date" id="editSearchDate">
+                </div>
+                <button class="submit-btn" style="background-color: var(--primary-gray); margin-bottom: 15px;" onclick="searchConfirmedData()">
+                    🔍 該当日の確定データを呼び出す
+                </button>
+                
+                <div id="searchResultArea" style="display: none;">
+                    <label>▼ 検索結果（修正・削除したいデータのボタンを押してください）</label>
+                    <div id="searchResultList" style="margin-top: 5px;">
+                        </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💾 確定データのCSV出力</div>
+                <div class="form-group">
+                    <textarea id="csvTextArea" rows="5" readonly style="font-family: monospace; font-size: 0.8rem;" placeholder="ここに確定データがCSV形式で表示されます"></textarea>
+                </div>
+                <button class="submit-btn" style="background-color: var(--primary-gray);" onclick="downloadCSV()">
+                    💾 CSVファイルをダウンロードする
+                </button>
+            </div>
         </div>
-
-        <button class="btn btn-orange" onclick="submitDamageReport()">📤 ダメージ報告を登録する</button>
-      </div>
-    </div>
-
-    <div id="view-leader" class="view hidden">
-      <div class="card">
-        <div class="card-title">■ 確定待ちデータ</div>
-        <table>
-          <thead>
-            <tr>
-              <th>状態</th>
-              <th>区分</th>
-              <th>賞味期限</th>
-              <th>数量</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="leader-pending-body">
-            </tbody>
-        </table>
-      </div>
-
-      <button class="btn btn-menu-leader" onclick="commitLeaderData()">🔒 データを確定（業務終了）</button>
-      
-      <button class="btn btn-secondary" onclick="toggleHistory()">⏳ これまでの確定履歴を表示する</button>
-
-      <div class="card hidden" id="history-section">
-        <div class="card-title">📋 確定履歴一覧</div>
-        <table>
-          <thead>
-            <tr>
-              <th>状態</th>
-              <th>確定日時</th>
-              <th>区分</th>
-              <th>賞味期限</th>
-              <th>数量</th>
-            </tr>
-          </thead>
-          <tbody id="history-table-body">
-            </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="view-admin-auth" class="view hidden">
-      <div class="card">
-        <div class="card-title">🔑 パスワード認証</div>
-        <div class="form-group">
-          <input type="password" class="form-control" id="admin-pass" placeholder="パスワードを入力">
-        </div>
-        <button class="btn btn-menu-admin" onclick="unlockAdmin()">🔓 ロック解除</button>
-      </div>
-    </div>
-
-    <div id="view-admin-main" class="view hidden">
-      
-      <div class="card">
-        <div class="card-title">📥📤 本日の入出庫 登録・変更</div>
-        
-        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">【 手動で1件ずつ入力 】</div>
-        
-        <div class="tab-group">
-          <div class="tab-btn active" id="tab-in" onclick="switchIoTab('入庫')">📥 入庫</div>
-          <div class="tab-btn" id="tab-out" onclick="switchIoTab('出庫')">📤 出庫</div>
-        </div>
-
-        <input type="hidden" id="admin-io-type" value="入庫">
-
-        <div class="form-group" id="admin-io-date-group">
-          <label id="io-date-label">(1) 賞味期限</label>
-          <input type="date" class="form-control" id="admin-io-date-cal">
-          <div id="io-auto-alloc-msg" class="hidden" style="color: #2980b9; font-weight: bold; font-size: 0.9rem; padding: 5px 0;">
-            ※賞味期限の古い在庫から自動的に引き当て出庫されます。
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label id="io-qty-label">(2) 数量</label>
-          <input type="number" class="form-control" id="admin-io-qty" value="100" min="1">
-        </div>
-        
-        <button class="btn btn-action-in" id="admin-manual-submit-btn" onclick="submitAdminManual()">➕ 登録する</button>
-
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
-
-        <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">【 コピペで一括登録 】</div>
-        <div class="form-group">
-          <textarea class="form-control" id="admin-paste-area" rows="4" placeholder="（例）&#13;2027/04/01 入庫 50&#13;2027/05/01 出庫 20"></textarea>
-          <div style="font-size:0.75rem; color:#666; margin-top:5px; line-height:1.3;">
-            ※Excelからコピー、または「スペース」「カンマ」「タブ」などで区切って貼り付け可能です。<br>
-            ※出庫データを貼り付けた場合も、賞味期限の古い順に自動引き当てされます。
-          </div>
-        </div>
-        <button class="btn btn-sm btn-menu-admin" onclick="submitAdminPaste()">📋 一括登録を実行</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">💾 データ管理</div>
-        <button class="btn btn-menu-admin" onclick="downloadCSV()">📥 CSVファイルでダウンロード</button>
-        <button class="btn btn-secondary" style="background:#c0392b;" onclick="resetLocalStorage()">⚠️ テストデータをすべて初期化する</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">✏️ 確定データ修正</div>
-        <table>
-          <thead>
-            <tr>
-              <th>区分</th>
-              <th>賞味期限</th>
-              <th>数量</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="admin-modify-body">
-            </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <div class="card-title">📜 管理者システムログ（操作履歴）</div>
-        <div class="log-list" id="admin-log-list">
-          <div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>
-        </div>
-      </div>
 
     </div>
 
-  </div>
-</div>
+    <script>
+        const todayStr = "2026-07-16";
 
-<script>
-  // ==================== データの読み込み・保存 (localStorage) ====================
-  const defaultStartStock = {
-    "2027/04/01": 10,
-    "2027/05/01": 500,
-    "2027/06/15": 0
-  };
+        let inventoryDb = [
+            { id: "INV-001", expiry: "2027-04-01", qty: 10 },
+            { id: "INV-002", expiry: "2027-05-01", qty: 500 },
+            { id: "INV-003", expiry: "2027-06-15", qty: 0 }
+        ];
 
-  const defaultCommitHistory = [
-    { time: "07/16 11:30", type: "ダメージ", date: "2027/04/01", qty: 10 },
-    { time: "07/16 11:30", type: "代替出庫", date: "2027/05/01", qty: 10 }
-  ];
+        let dailyTx = {
+            in: [],      
+            out: [],     
+            damage: [],  
+            adjust: []   
+        };
 
-  let startStock = loadData("startStock", defaultStartStock);
-  let transactions = loadData("transactions", []);
-  let commitHistory = loadData("commitHistory", defaultCommitHistory);
-  let systemLogs = loadData("systemLogs", []);
+        let confirmedDb = [
+            { id: "TX-001", date: "2026-07-15", expiry: "2027-04-01", type: "出庫", qty: 10 },
+            { id: "TX-002", date: "2026-07-15", expiry: "2027-04-01", type: "ダメージ", qty: 2 }
+        ];
 
-  let viewHistory = ['view-menu'];
+        const screenHistory = [];
+        function switchScreen(screenId, title) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            const backBtn = document.getElementById('backBtn');
+            const headerTitle = document.getElementById('headerTitle');
 
-  function loadData(key, defaultValue) {
-    let raw = localStorage.getItem(key);
-    if (raw) {
-      try { return JSON.parse(raw); } catch(e) { return defaultValue; }
-    }
-    return defaultValue;
-  }
+            if (screenId === 'screenMenu') {
+                backBtn.style.display = 'none';
+                headerTitle.textContent = 'ポテト在庫システム';
+                screenHistory.length = 0;
+            } else {
+                backBtn.style.display = 'block';
+                headerTitle.textContent = title;
+                screenHistory.push({ id: screenId, title: title });
+            }
 
-  function saveData() {
-    localStorage.setItem("startStock", JSON.stringify(startStock));
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-    localStorage.setItem("commitHistory", JSON.stringify(commitHistory));
-    localStorage.setItem("systemLogs", JSON.stringify(systemLogs));
-  }
-
-  function resetLocalStorage() {
-    if (confirm("これまでに保存されたすべての入力データ・履歴・システムログがリセットされ、初期状態に戻ります。よろしいですか？")) {
-      localStorage.clear();
-      startStock = { ...defaultStartStock };
-      transactions = [];
-      commitHistory = [ ...defaultCommitHistory ];
-      systemLogs = [];
-      saveData();
-      updateSystemState();
-      alert("データを完全にリセットしました。");
-      switchView('view-menu');
-    }
-  }
-
-  window.onload = function() {
-    let today = new Date().toISOString().split('T')[0];
-    document.getElementById('admin-io-date-cal').value = today;
-    updateSystemState();
-  };
-
-  // ==================== ログの生成関数（最大30件制限） ====================
-  function addSystemLog(actionType, message) {
-    let now = new Date();
-    let timeStr = `${("0" + (now.getMonth() + 1)).slice(-2)}/${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}`;
-    
-    systemLogs.unshift({
-      time: timeStr,
-      action: actionType,
-      text: message
-    });
-
-    if (systemLogs.length > 30) {
-      systemLogs = systemLogs.slice(0, 30);
-    }
-    saveData();
-  }
-
-  // ==================== 状態集計関数 ====================
-  function calcCurrentStock() {
-    let currentStock = { ...startStock };
-    transactions.forEach(t => {
-      if (t.type === '入庫') {
-        currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
-      } else {
-        currentStock[t.date] = (currentStock[t.date] || 0) - t.qty;
-      }
-    });
-    return currentStock;
-  }
-
-  // ==================== 在庫の総数計算用 ====================
-  function calcTotalStockAmount() {
-    let currentStock = calcCurrentStock();
-    return Object.values(currentStock).reduce((sum, q) => sum + q, 0);
-  }
-
-  // ==================== 入出庫タブ切り替え ====================
-  function switchIoTab(tabType) {
-    document.getElementById('admin-io-type').value = tabType;
-    let submitBtn = document.getElementById('admin-manual-submit-btn');
-
-    if (tabType === '入庫') {
-      document.getElementById('tab-in').classList.add('active');
-      document.getElementById('tab-out').classList.remove('active');
-      
-      // 入庫時の表示設定 (カレンダーを表示、メッセージ非表示)
-      document.getElementById('admin-io-date-cal').classList.remove('hidden');
-      document.getElementById('io-auto-alloc-msg').classList.add('hidden');
-      document.getElementById('io-date-label').innerText = "(1) 賞味期限";
-      document.getElementById('io-qty-label').innerText = "(2) 数量";
-      
-      submitBtn.innerText = "➕ この賞味期限で「入庫」する";
-      submitBtn.className = "btn btn-action-in";
-    } else {
-      document.getElementById('tab-in').classList.remove('active');
-      document.getElementById('tab-out').classList.add('active');
-      
-      // 出庫時の表示設定 (カレンダーを隠し、自動引き当てメッセージを表示)
-      document.getElementById('admin-io-date-cal').classList.add('hidden');
-      document.getElementById('io-auto-alloc-msg').classList.remove('hidden');
-      document.getElementById('io-date-label').innerText = "(1) 自動引き当て処理";
-      document.getElementById('io-qty-label').innerText = "(2) 数量 (ケース)";
-
-      submitBtn.innerText = "➕ 古い順で「自動出庫」する";
-      submitBtn.className = "btn btn-action-out";
-    }
-  }
-
-  // ==================== 状態更新 ＆ 画面反映 ====================
-  function updateSystemState() {
-    let currentStock = calcCurrentStock();
-    let sumIn = 0;
-    let sumOut = 0;
-
-    transactions.forEach(t => {
-      if (t.type === '入庫') sumIn += t.qty;
-      else sumOut += t.qty;
-    });
-
-    // --- 現場画面の更新 ---
-    document.getElementById('driver-sum-in').innerText = `+${sumIn}`;
-    document.getElementById('driver-sum-out').innerText = `-${sumOut}`;
-    
-    let totalStock = Object.values(currentStock).reduce((a, b) => a + b, 0);
-    let totalStart = Object.values(startStock).reduce((a, b) => a + b, 0);
-    document.getElementById('driver-total-stock').innerText = `${totalStock} ケース`;
-    document.getElementById('driver-start-stock').innerText = `(本日開始時: ${totalStart} ケース)`;
-
-    let tbody = document.getElementById('driver-stock-table-body');
-    tbody.innerHTML = '';
-    
-    let selectDmg = document.getElementById('dmg-target-date');
-    let selectRep = document.getElementById('dmg-rep-date');
-    
-    let currentDmgVal = selectDmg.value;
-    let currentRepVal = selectRep.value;
-
-    selectDmg.innerHTML = '';
-    selectRep.innerHTML = '';
-
-    // 現在庫が0以上、または登録履歴がある日付をリスト化
-    Object.keys(currentStock).sort().forEach((date, index) => {
-      let qty = currentStock[date];
-      let isOldest = (index === 0 && qty > 0) ? "【最古】" : "";
-      
-      let row = `<tr>
-        <td style="text-align:left; padding-left:15px;">${isOldest}${date}</td>
-        <td>${qty} ケース</td>
-      </tr>`;
-      tbody.innerHTML += row;
-
-      let optText = `${date} (残${qty}ケース)`;
-      selectDmg.innerHTML += `<option value="${date}">${optText}</option>`;
-      selectRep.innerHTML += `<option value="${date}">${optText}</option>`;
-    });
-
-    if (currentDmgVal) selectDmg.value = currentDmgVal;
-    if (currentRepVal) selectRep.value = currentRepVal;
-
-    // --- リーダー画面の更新 ---
-    let pendingBody = document.getElementById('leader-pending-body');
-    pendingBody.innerHTML = '';
-    let pendingTx = transactions.filter(t => t.status === 'pending');
-    
-    if (pendingTx.length === 0) {
-      pendingBody.innerHTML = `<tr><td colspan="5" style="color:#999; padding:15px;">一時データはありません</td></tr>`;
-    } else {
-      pendingTx.forEach(t => {
-        let row = `<tr>
-          <td><span class="badge badge-pending">⚠️未確定</span></td>
-          <td>${t.type}</td>
-          <td>${t.date}</td>
-          <td>${t.qty} 箱</td>
-          <td>
-            <button class="btn-sm" style="background:#f39c12; color:#fff; border:none; border-radius:3px;" onclick="editTx(${t.id})">修正</button>
-            <button class="btn-sm" style="background:#e74c3c; color:#fff; border:none; border-radius:3px;" onclick="deleteTx(${t.id})">削除</button>
-          </td>
-        </tr>`;
-        pendingBody.innerHTML += row;
-      });
-    }
-
-    // 確定履歴テーブル
-    let historyBody = document.getElementById('history-table-body');
-    historyBody.innerHTML = '';
-    commitHistory.forEach(h => {
-      let row = `<tr>
-        <td><span class="badge badge-success">✅報告済</span></td>
-        <td>${h.time}</td>
-        <td>${h.type}</td>
-        <td>${h.date}</td>
-        <td>${h.qty} 箱</td>
-      </tr>`;
-      historyBody.innerHTML += row;
-    });
-
-    // --- 管理者画面 確定データ修正の更新 ---
-    let adminModifyBody = document.getElementById('admin-modify-body');
-    adminModifyBody.innerHTML = '';
-    let committedTx = transactions.filter(t => t.status === 'committed');
-
-    if (committedTx.length === 0) {
-      adminModifyBody.innerHTML = `<tr><td colspan="4" style="color:#999; padding:15px;">確定データはありません</td></tr>`;
-    } else {
-      committedTx.forEach(t => {
-        let row = `<tr>
-          <td>${t.type}</td>
-          <td>${t.date}</td>
-          <td>${t.qty} 箱</td>
-          <td>
-            <button class="btn-sm" style="background:#f39c12; color:#fff; border:none; border-radius:3px;" onclick="editTx(${t.id})">修正</button>
-            <button class="btn-sm" style="background:#e74c3c; color:#fff; border:none; border-radius:3px;" onclick="deleteTx(${t.id})">削除</button>
-          </td>
-        </tr>`;
-        adminModifyBody.innerHTML += row;
-      });
-    }
-
-    // --- システム操作ログの更新表示（最大30件） ---
-    let logListDiv = document.getElementById('admin-log-list');
-    if (systemLogs.length === 0) {
-      logListDiv.innerHTML = `<div style="color: #999; text-align: center; margin-top: 20px;">履歴はありません</div>`;
-    } else {
-      logListDiv.innerHTML = '';
-      systemLogs.forEach(log => {
-        let color = log.action === '削除' ? '#e74c3c' : (log.action === '修正' ? '#f39c12' : '#27ae60');
-        logListDiv.innerHTML += `<div class="log-item">
-          <span style="color:#888;">[${log.time}]</span> 
-          <span style="color:${color}; font-weight:bold;">[${log.action}]</span> 
-          ${log.text}
-        </div>`;
-      });
-    }
-  }
-
-  // ==================== ダメージ報告 ====================
-  function syncReplenishDate() {
-    let dmgDate = document.getElementById('dmg-target-date').value;
-    document.getElementById('dmg-rep-date').value = dmgDate;
-  }
-
-  function submitDamageReport() {
-    let dmgDate = document.getElementById('dmg-target-date').value;
-    let qty = parseInt(document.getElementById('dmg-qty').value) || 0;
-    let repDate = document.getElementById('dmg-rep-date').value;
-
-    if (qty <= 0) {
-      alert("正しい数量を入力してください。");
-      return;
-    }
-
-    // マイナス在庫防止チェック
-    let currentStock = calcCurrentStock();
-    let available = currentStock[dmgDate] || 0;
-    if (qty > available) {
-      alert(`在庫が不足しています。\n${dmgDate} のダメージ報告可能数は最大 ${available} ケースです。`);
-      return;
-    }
-
-    transactions.push({
-      id: Date.now(),
-      type: 'ダメージ',
-      date: dmgDate,
-      qty: qty,
-      status: 'pending'
-    });
-
-    transactions.push({
-      id: Date.now() + 1,
-      type: '代替出庫',
-      date: repDate,
-      qty: qty,
-      status: 'pending'
-    });
-
-    saveData();
-    updateSystemState();
-    showAlert("一時ダメージ報告を登録しました！リーダー確認をお待ちください。");
-    switchView('view-menu');
-  }
-
-  // ==================== リーダー機能 ====================
-  function commitLeaderData() {
-    let pendingTx = transactions.filter(t => t.status === 'pending');
-    if (pendingTx.length === 0) {
-      alert("確定待ちの一時保存データはありません。");
-      return;
-    }
-
-    let now = new Date();
-    let timeStr = `${("0" + (now.getMonth() + 1)).slice(-2)}/${("0" + now.getDate()).slice(-2)} ${("0" + now.getHours()).slice(-2)}:${("0" + now.getMinutes()).slice(-2)}`;
-
-    pendingTx.forEach(t => {
-      t.status = 'committed';
-      commitHistory.unshift({
-        time: timeStr,
-        type: t.type,
-        date: t.date,
-        qty: t.qty
-      });
-    });
-
-    saveData();
-    updateSystemState();
-    showAlert("データを送信し、一括確定（業務終了）しました！");
-    switchView('view-menu');
-  }
-
-  function toggleHistory() {
-    let section = document.getElementById('history-section');
-    section.classList.toggle('hidden');
-  }
-
-  // ==================== 管理者機能 ====================
-  function unlockAdmin() {
-    let pass = document.getElementById('admin-pass').value;
-    if (pass === "1234") {
-      document.getElementById('view-admin-auth').classList.add('hidden');
-      document.getElementById('view-admin-main').classList.remove('hidden');
-    } else {
-      alert("パスワードが違います");
-    }
-  }
-
-  // 古い順に自動引き当てて出庫データをtransactionsに追加する処理（一括コピペ・手動共通）
-  function processAutoAllocatedOut(requestQty, isCommittedState = true, customBaseTransactions = null) {
-    let targetTransactions = customBaseTransactions ? [...customBaseTransactions] : [...transactions];
-    
-    // 現在の在庫状態を一時計算
-    let currentStock = { ...startStock };
-    targetTransactions.forEach(t => {
-      if (t.type === '入庫') currentStock[t.date] = (currentStock[t.date] || 0) + t.qty;
-      else currentStock[t.date] = (currentStock[t.date] || 0) - t.qty;
-    });
-
-    let totalAvailable = Object.values(currentStock).reduce((sum, q) => sum + q, 0);
-    if (requestQty > totalAvailable) {
-      return { success: false, errorReason: `全体在庫不足 (要求数:${requestQty}に対し現在総数:${totalAvailable})` };
-    }
-
-    // 賞味期限の古い順にソート
-    let sortedDates = Object.keys(currentStock).sort();
-    let remainingToAlloc = requestQty;
-    let newTransactionsAdded = [];
-    let timestampBase = Date.now();
-
-    for (let date of sortedDates) {
-      let qtyOnDate = currentStock[date] || 0;
-      if (qtyOnDate <= 0) continue;
-
-      let allocQty = Math.min(remainingToAlloc, qtyOnDate);
-      
-      newTransactionsAdded.push({
-        id: timestampBase++,
-        type: '出庫',
-        date: date,
-        qty: allocQty,
-        status: isCommittedState ? 'committed' : 'pending'
-      });
-
-      remainingToAlloc -= allocQty;
-      if (remainingToAlloc <= 0) break;
-    }
-
-    return { success: true, added: newTransactionsAdded };
-  }
-
-  // 手動登録ボタン押下時
-  function submitAdminManual() {
-    let type = document.getElementById('admin-io-type').value;
-    let qty = parseInt(document.getElementById('admin-io-qty').value) || 0;
-
-    if (qty <= 0) {
-      alert("正しい数量を入力してください");
-      return;
-    }
-
-    if (type === '入庫') {
-      let rawDate = document.getElementById('admin-io-date-cal').value;
-      if (!rawDate) {
-        alert("賞味期限（日付）を入力してください");
-        return;
-      }
-      let date = rawDate.replace(/-/g, '/'); // YYYY/MM/DD 形式に
-
-      transactions.push({
-        id: Date.now(),
-        type: '入庫',
-        date: date,
-        qty: qty,
-        status: 'committed'
-      });
-
-      addSystemLog("手動登録", `${date} の [入庫] を 新規に ${qty} 箱 登録しました。`);
-      saveData();
-      updateSystemState();
-      showAlert(`管理データに 【入庫: ${date} - ${qty}ケース】 を追加しました`);
-    } else {
-      // 出庫（自動引き当て処理を実行）
-      let result = processAutoAllocatedOut(qty, true);
-      if (!result.success) {
-        alert(`登録できません。\n${result.errorReason}`);
-        return;
-      }
-
-      // 引き当て結果を登録
-      transactions = transactions.concat(result.added);
-      
-      let logMsg = `[自動出庫] 計 ${qty} 箱。内訳：`;
-      result.added.forEach((t, i) => {
-        logMsg += `${i > 0 ? ', ' : ''}${t.date}(${t.qty}箱)`;
-      });
-      addSystemLog("手動登録", logMsg);
-
-      saveData();
-      updateSystemState();
-      showAlert(`古い順で計 ${qty} ケースの出庫引き当てを完了しました`);
-    }
-  }
-
-  // コピペ一括登録
-  function submitAdminPaste() {
-    let text = document.getElementById('admin-paste-area').value.trim();
-    if (!text) {
-      alert("貼り付けエリアが空です");
-      return;
-    }
-
-    // 改行で1行ずつ分解
-    let rows = text.split('\n');
-    let count = 0;
-    let skippedCount = 0;
-
-    // トランザクションを仮計算しながらチェックする作業用配列
-    let tempTx = [...transactions];
-
-    rows.forEach((rowStr, i) => {
-      // どのような区切り文字（タブ、カンマ、スペース）でも分解できるように正規表現で分割
-      let cols = rowStr.trim().split(/[\t,\s]+/);
-      
-      // 分解結果が3列（日付、区分、数量）あるかチェック
-      if (cols.length >= 3) {
-        let date = cols[0].trim().replace(/-/g, '/');
-        let type = cols[1].trim();
-        let qty = parseInt(cols[2].trim()) || 0;
-
-        if (qty > 0 && type === '入庫') {
-          // 入庫は通常登録
-          tempTx.push({
-            id: Date.now() + i + 100,
-            type: '入庫',
-            date: date,
-            qty: qty,
-            status: 'committed'
-          });
-          count++;
-        } else if (qty > 0 && type === '出庫') {
-          // 出庫は仮の配列をベースに「古い順自動引き当て」ロジックを通す
-          let result = processAutoAllocatedOut(qty, true, tempTx);
-          if (result.success) {
-            tempTx = tempTx.concat(result.added);
-            count++;
-          } else {
-            skippedCount++;
-          }
+            if (screenId === 'screenWarehouse') updateWarehouseScreen();
+            if (screenId === 'screenLeader') updateLeaderScreen();
+            if (screenId === 'screenAdmin') updateAdminScreen();
         }
-      } else {
-        skippedCount++;
-      }
-    });
 
-    if (count === 0) {
-      alert("登録可能なデータが見つかりませんでした。\nフォーマットをご確認ください。\n(例) 2027/04/01 入庫 50");
-      return;
-    }
+        document.getElementById('backBtn').addEventListener('click', () => {
+            screenHistory.pop();
+            if (screenHistory.length > 0) {
+                const prev = screenHistory[screenHistory.length - 1];
+                switchScreen(prev.id, prev.title);
+                screenHistory.pop();
+            } else {
+                switchScreen('screenMenu', 'ポテト在庫システム');
+            }
+        });
 
-    transactions = tempTx;
+        function calculateStock() {
+            let stockMap = {};
+            inventoryDb.forEach(item => {
+                stockMap[item.expiry] = { prev: item.qty, in: 0, out: 0, final: item.qty };
+            });
 
-    addSystemLog("一括登録", `コピペ機能により一括で ${count} 件のデータを登録しました。 (対象外/在庫不足による未登録: ${skippedCount}件)`);
-    saveData();
-    updateSystemState();
-    document.getElementById('admin-paste-area').value = '';
-    
-    if (skippedCount > 0) {
-      showAlert(`一括登録完了 (登録: ${count} 件、エラーまたは在庫不足スキップ: ${skippedCount} 件)`);
-    } else {
-      showAlert(`貼り付けデータから計 ${count} 件を一括登録しました！`);
-    }
-  }
+            dailyTx.in.forEach(tx => {
+                if (!stockMap[tx.expiry]) stockMap[tx.expiry] = { prev: 0, in: 0, out: 0, final: 0 };
+                stockMap[tx.expiry].in += tx.qty;
+                stockMap[tx.expiry].final += tx.qty;
+            });
 
-  function editTx(id) {
-    let t = transactions.find(item => item.id === id);
-    if (!t) return;
-    
-    let newQtyStr = prompt(`${t.date} [${t.type}] の数量を変更してください`, t.qty);
-    if (newQtyStr === null) return;
+            dailyTx.out.forEach(tx => {
+                if (!stockMap[tx.expiry]) stockMap[tx.expiry] = { prev: 0, in: 0, out: 0, final: 0 };
+                stockMap[tx.expiry].out += tx.qty;
+                stockMap[tx.expiry].final -= tx.qty;
+            });
 
-    let newQty = parseInt(newQtyStr) || 0;
-    if (newQty <= 0) {
-      alert("数量は1以上で入力してください");
-      return;
-    }
+            dailyTx.damage.forEach(tx => {
+                if (stockMap[tx.damageExpiry]) {
+                    stockMap[tx.damageExpiry].final -= tx.qty;
+                }
+                if (stockMap[tx.altExpiry]) {
+                    stockMap[tx.altExpiry].final -= tx.qty;
+                }
+            });
 
-    // 変更後の在庫マイナスチェック
-    if (t.type === '出庫' || t.type === '代替出庫' || t.type === 'ダメージ') {
-      let currentStock = { ...startStock };
-      transactions.forEach(item => {
-        if (item.id !== id) {
-          if (item.type === '入庫') currentStock[item.date] = (currentStock[item.date] || 0) + item.qty;
-          else currentStock[item.date] = (currentStock[item.date] || 0) - item.qty;
+            dailyTx.adjust.forEach(tx => {
+                if (!stockMap[tx.expiry]) stockMap[tx.expiry] = { prev: 0, in: 0, out: 0, final: 0 };
+                stockMap[tx.expiry].final += tx.qty;
+            });
+
+            return stockMap;
         }
-      });
-      let available = currentStock[t.date] || 0;
-      if (newQty > available) {
-        alert(`在庫不足のため変更できません。\n対象日の残り枠は ${available} 箱です。`);
-        return;
-      }
-    }
 
-    let oldQty = t.qty;
-    t.qty = newQty;
+        function updateWarehouseScreen() {
+            const stock = calculateStock();
+            const sortedExpiries = Object.keys(stock).sort();
 
-    addSystemLog("修正", `${t.date} [${t.type}] 数量: ${oldQty} 箱 ──➔ 【 ${newQty} 箱 】に変更しました。`);
-    saveData();
-    updateSystemState();
-    showAlert("数量の修正を反映しました");
-  }
+            let totalIn = dailyTx.in.reduce((acc, cur) => acc + cur.qty, 0);
+            let totalOut = dailyTx.out.reduce((acc, cur) => acc + cur.qty, 0);
+            document.getElementById('whTotalIn').textContent = totalIn;
+            document.getElementById('whTotalOut').textContent = "-" + totalOut;
 
-  function deleteTx(id) {
-    let t = transactions.find(item => item.id === id);
-    if (!t) return;
+            const tbody = document.getElementById('whTableBody');
+            tbody.innerHTML = '';
 
-    if (!confirm(`本当にこのデータを削除してもよろしいですか？\n[${t.type}] ${t.date} (${t.qty} 箱)`)) return;
+            let sumPrev = 0, sumIn = 0, sumOut = 0, sumFinal = 0;
 
-    // 入庫データ削除時の在庫マイナス連鎖チェック
-    if (t.type === '入庫') {
-      let currentStock = { ...startStock };
-      let tempTx = transactions.filter(item => item.id !== id);
-      let isValid = true;
-      for (let item of tempTx) {
-        if (item.type === '入庫') currentStock[item.date] = (currentStock[item.date] || 0) + item.qty;
-        else currentStock[item.date] = (currentStock[item.date] || 0) - item.qty;
-        
-        if ((currentStock[item.date] || 0) < 0) {
-          isValid = false;
-          break;
+            sortedExpiries.forEach((expiry, index) => {
+                const data = stock[expiry];
+                sumPrev += data.prev;
+                sumIn += data.in;
+                sumOut += data.out;
+                sumFinal += data.final;
+
+                const tr = document.createElement('tr');
+                const isOldestLabel = (index === 0) ? '<br><span style="font-size:0.7rem;color:var(--danger-red);font-weight:bold;">【最古】</span>' : '';
+                const mmdd = expiry.substring(5).replace('-', '/');
+
+                tr.innerHTML = `
+                    <td><strong>${mmdd}</strong>${isOldestLabel}</td>
+                    <td>${data.prev}</td>
+                    <td>${data.in}</td>
+                    <td>${data.out > 0 ? '-' + data.out : '0'}</td>
+                    <td style="font-weight:bold; color:${data.final < 0 ? 'var(--danger-red)' : 'inherit'}">${data.final}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const tfoot = document.getElementById('whTableFoot');
+            tfoot.innerHTML = `
+                <td>合 計</td>
+                <td>${sumPrev}</td>
+                <td>${sumIn}</td>
+                <td>${sumOut > 0 ? '-' + sumOut : '0'}</td>
+                <td>${sumFinal}</td>
+            `;
+
+            const dmgSelect = document.getElementById('damageExpiry');
+            const altSelect = document.getElementById('alternativeExpiry');
+            dmgSelect.innerHTML = '';
+            altSelect.innerHTML = '';
+
+            sortedExpiries.forEach(expiry => {
+                const physicalStock = stock[expiry].prev + stock[expiry].in;
+                if (physicalStock > 0) {
+                    dmgSelect.innerHTML += `<option value="${expiry}">${expiry} (残: ${physicalStock})</option>`;
+                }
+                altSelect.innerHTML += `<option value="${expiry}">${expiry} (残: ${stock[expiry].final})</option>`;
+            });
+
+            updateDamageMax();
         }
-      }
-      if (!isValid) {
-        alert("この入庫データを削除すると、同日の出庫数が在庫を上回りマイナス在庫になってしまうため、削除できません。");
-        return;
-      }
-    }
-    
-    addSystemLog("削除", `${t.date} [${t.type}] のデータ（${t.qty} 箱）を削除しました。`);
 
-    transactions = transactions.filter(item => item.id !== id);
-    saveData();
-    updateSystemState();
-    showAlert("データを削除しました");
-  }
+        function updateDamageMax() {
+            const stock = calculateStock();
+            const dmgExpiry = document.getElementById('damageExpiry').value;
+            const qtyInput = document.getElementById('damageQty');
+            if (dmgExpiry && stock[dmgExpiry]) {
+                const maxDmg = stock[dmgExpiry].prev + stock[dmgExpiry].in;
+                qtyInput.max = maxDmg;
+                qtyInput.value = Math.min(qtyInput.value || 1, maxDmg);
+            }
+        }
 
-  function downloadCSV() {
-    let csvContent = "\uFEFF"; 
-    csvContent += "ステータス,区分,賞味期限,数量(ケース)\n";
-    
-    transactions.forEach(t => {
-      csvContent += `${t.status},${t.type},${t.date},${t.qty}\n`;
-    });
+        function handleDamageSubmit(e) {
+            e.preventDefault();
+            const expiry = document.getElementById('damageExpiry').value;
+            const qty = parseInt(document.getElementById('damageQty').value);
+            const altExpiry = document.getElementById('alternativeExpiry').value;
 
-    csvContent += "\n--- 管理者システム操作ログ ---\n";
-    csvContent += "操作日時,アクション,変更詳細\n";
-    systemLogs.forEach(log => {
-      csvContent += `"${log.time}","${log.action}","${log.text}"\n`;
-    });
+            if (expiry === altExpiry) {
+                alert("ダメージ対象と代替対応の賞味期限に同じ日付は指定できません。");
+                return;
+            }
 
-    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    let url = URL.createObjectURL(blob);
-    let link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "potato_inventory_data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+            dailyTx.damage.push({
+                damageExpiry: expiry,
+                qty: qty,
+                altExpiry: altExpiry
+            });
 
-  // ==================== ユーティリティ ====================
-  function switchView(viewId) {
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-    document.getElementById(viewId).classList.remove('hidden');
+            alert("ダメージ報告と代替対応を登録しました。最終チェックで一括確定してください。");
+            updateWarehouseScreen();
+        }
 
-    let backBtn = document.getElementById('back-button');
-    let titleSpan = document.getElementById('header-title');
+        function updateLeaderScreen() {
+            const listContainer = document.getElementById('leaderQueueList');
+            listContainer.innerHTML = '';
 
-    if (viewId === 'view-menu') {
-      backBtn.classList.add('hidden');
-      titleSpan.innerText = "ポテト在庫システム（テスト版）";
-      viewHistory = ['view-menu'];
-    } else {
-      backBtn.classList.remove('hidden');
-      viewHistory.push(viewId);
-      
-      if (viewId === 'view-driver') titleSpan.innerText = "在庫確認・ダメージ報告";
-      if (viewId === 'view-leader') titleSpan.innerText = "最終チェック";
-      if (viewId === 'view-admin-auth' || viewId === 'view-admin-main') titleSpan.innerText = "管理者メニュー";
-    }
-  }
+            const alertCard = document.getElementById('leaderAlertCard');
+            const altText = document.getElementById('alternativeDetailText');
 
-  function goBack() {
-    if (viewHistory.length > 1) {
-      viewHistory.pop();
-      let prevView = viewHistory[viewHistory.length - 1];
-      switchView(prevView);
-    } else {
-      switchView('view-menu');
-    }
-  }
+            if (dailyTx.damage.length > 0) {
+                alertCard.style.display = 'block';
+                let alertDetails = dailyTx.damage.map(d => `・不足分(${d.qty}) ──➔ ${d.altExpiry} から代替出庫 済み`).join('<br>');
+                altText.innerHTML = alertDetails;
+            } else {
+                alertCard.style.display = 'none';
+            }
 
-  function showAlert(msg) {
-    let alertDiv = document.getElementById('alert-msg');
-    alertDiv.innerText = msg;
-    alertDiv.classList.remove('hidden');
-    setTimeout(() => {
-      alertDiv.classList.add('hidden');
-    }, 4000);
-  }
-</script>
+            dailyTx.out.forEach(tx => {
+                listContainer.innerHTML += `
+                    <div class="queue-item">
+                        <span>${tx.expiry} 出庫予定 ${tx.qty}</span>
+                    </div>
+                `;
+            });
 
+            dailyTx.damage.forEach(tx => {
+                listContainer.innerHTML += `
+                    <div class="queue-item">
+                        <span>${tx.damageExpiry} ダメージ ${tx.qty}</span>
+                    </div>
+                `;
+                listContainer.innerHTML += `
+                    <div class="queue-item">
+                        <span>${tx.altExpiry} 代替出庫 ${tx.qty}</span>
+                    </div>
+                `;
+            });
+
+            if (dailyTx.out.length === 0 && dailyTx.damage.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center;color:#666;font-size:0.9rem;padding:20px;">現在、確定待ちのデータはありません。</p>';
+            }
+        }
+
+        // 確定処理を実行（メール送信なし）
+        function commitTodayData() {
+            if (dailyTx.out.length === 0 && dailyTx.damage.length === 0 && dailyTx.in.length === 0 && dailyTx.adjust.length === 0) {
+                alert("本日処理すべきデータがありません。");
+                return;
+            }
+
+            dailyTx.in.forEach(tx => {
+                let exist = inventoryDb.find(i => i.expiry === tx.expiry);
+                if (exist) exist.qty += tx.qty;
+                else inventoryDb.push({ id: "INV-" + Date.now(), expiry: tx.expiry, qty: tx.qty });
+
+                confirmedDb.push({ id: "TX-" + Date.now(), date: todayStr, expiry: tx.expiry, type: "入庫", qty: tx.qty });
+            });
+
+            dailyTx.out.forEach(tx => {
+                let exist = inventoryDb.find(i => i.expiry === tx.expiry);
+                if (exist) exist.qty -= tx.qty;
+                confirmedDb.push({ id: "TX-" + Date.now(), date: todayStr, expiry: tx.expiry, type: "出庫", qty: tx.qty });
+            });
+
+            dailyTx.damage.forEach(tx => {
+                let existDmg = inventoryDb.find(i => i.expiry === tx.damageExpiry);
+                if (existDmg) existDmg.qty -= tx.qty;
+
+                let existAlt = inventoryDb.find(i => i.expiry === tx.altExpiry);
+                if (existAlt) existAlt.qty -= tx.qty;
+
+                confirmedDb.push({ id: "TX-" + Date.now(), date: todayStr, expiry: tx.damageExpiry, type: "ダメージ", qty: tx.qty });
+                confirmedDb.push({ id: "TX-" + Date.now(), date: todayStr, expiry: tx.altExpiry, type: "代替出庫", qty: tx.qty });
+            });
+
+            dailyTx.adjust.forEach(tx => {
+                let exist = inventoryDb.find(i => i.expiry === tx.expiry);
+                if (exist) exist.qty += tx.qty;
+                else inventoryDb.push({ id: "INV-" + Date.now(), expiry: tx.expiry, qty: tx.qty });
+
+                confirmedDb.push({ id: "TX-" + Date.now(), date: todayStr, expiry: tx.expiry, type: `微調整(${tx.reason})`, qty: tx.qty });
+            });
+
+            dailyTx = { in: [], out: [], damage: [], adjust: [] };
+
+            alert("本日のすべてのデータを一括確定し、業務を終了しました。");
+            switchScreen('screenMenu', 'ポテト在庫システム');
+            updateCSVData();
+        }
+
+        function updateAdminScreen() {
+            const adjSelect = document.getElementById('adjExpiry');
+            adjSelect.innerHTML = '';
+            inventoryDb.forEach(item => {
+                adjSelect.innerHTML += `<option value="${item.expiry}">${item.expiry} (現在の残: ${item.qty})</option>`;
+            });
+
+            document.getElementById('editSearchDate').value = todayStr;
+            updateCSVData();
+        }
+
+        function switchAdminTab(type) {
+            const tabIn = document.getElementById('tabIn');
+            const tabOut = document.getElementById('tabOut');
+            const formIn = document.getElementById('adminInForm');
+            const formOut = document.getElementById('adminOutForm');
+
+            if (type === 'in') {
+                tabIn.className = 'tab active-in';
+                tabOut.className = 'tab';
+                formIn.style.display = 'block';
+                formOut.style.display = 'none';
+            } else {
+                tabIn.className = 'tab';
+                tabOut.className = 'tab active-out';
+                formIn.style.display = 'none';
+                formOut.style.display = 'block';
+            }
+        }
+
+        function validatePastDate() {
+            const dateInput = document.getElementById('inExpiry').value;
+            const errorMsg = document.getElementById('pastDateError');
+            if (dateInput && dateInput < todayStr) {
+                errorMsg.style.display = 'block';
+                return false;
+            } else {
+                errorMsg.style.display = 'none';
+                return true;
+            }
+        }
+
+        function handleInSubmit(e) {
+            e.preventDefault();
+            if (!validatePastDate()) return;
+
+            const expiry = document.getElementById('inExpiry').value;
+            const qty = parseInt(document.getElementById('inQty').value);
+
+            dailyTx.in.push({ expiry, qty });
+            alert("本日入庫分として登録にプールしました。最終チェック時に反映されます。");
+            document.getElementById('adminInForm').reset();
+        }
+
+        function handleOutSubmit(e) {
+            e.preventDefault();
+            let qtyToDraw = parseInt(document.getElementById('outQty').value);
+            const tempStock = calculateStock();
+            const sortedExpiries = Object.keys(tempStock).sort();
+
+            let drawnTransactions = [];
+            for (let expiry of sortedExpiries) {
+                if (qtyToDraw <= 0) break;
+                let available = tempStock[expiry].final;
+                if (available > 0) {
+                    let draw = Math.min(qtyToDraw, available);
+                    drawnTransactions.push({ expiry, qty: draw });
+                    qtyToDraw -= draw;
+                }
+            }
+
+            if (qtyToDraw > 0) {
+                alert(`在庫が不足しています！ 引き当てられなかった不足分: ${qtyToDraw}`);
+                return;
+            }
+
+            drawnTransactions.forEach(t => {
+                dailyTx.out.push(t);
+            });
+
+            alert("古い順に出荷引き当てを実行し、プールに登録しました。");
+            document.getElementById('adminOutForm').reset();
+        }
+
+        function handleAdjustSubmit(e) {
+            e.preventDefault();
+            const expiry = document.getElementById('adjExpiry').value;
+            const qty = parseInt(document.getElementById('adjQty').value);
+            const reason = document.getElementById('adjReason').value;
+
+            dailyTx.adjust.push({ expiry, qty, reason });
+            alert("在庫の強制微調整データをプールに登録しました。最終チェック時に反映されます。");
+            updateAdminScreen();
+        }
+
+        function searchConfirmedData() {
+            const searchDate = document.getElementById('editSearchDate').value;
+            const resultArea = document.getElementById('searchResultArea');
+            const resultList = document.getElementById('searchResultList');
+
+            resultList.innerHTML = '';
+            const filtered = confirmedDb.filter(d => d.date === searchDate);
+
+            if (filtered.length === 0) {
+                resultList.innerHTML = '<p style="font-size:0.85rem;color:#666;">該当日の確定データが見つかりません。</p>';
+            } else {
+                filtered.forEach(item => {
+                    resultList.innerHTML += `
+                        <div class="data-item">
+                            <span>${item.expiry} | ${item.type} | ${item.qty}</span>
+                            <div class="item-actions">
+                                <button class="btn-edit" onclick="editConfirmedItem('${item.id}')">修正</button>
+                                <button class="btn-delete" onclick="deleteConfirmedItem('${item.id}')">削除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            resultArea.style.display = 'block';
+        }
+
+        function editConfirmedItem(id) {
+            const item = confirmedDb.find(d => d.id === id);
+            if (!item) return;
+
+            const newQty = prompt(`${item.expiry}の${item.type}数量を修正します。新しい数量を入力してください：`, item.qty);
+            if (newQty !== null && !isNaN(newQty)) {
+                const parsedQty = parseInt(newQty);
+                let diff = parsedQty - item.qty;
+                let inv = inventoryDb.find(i => i.expiry === item.expiry);
+
+                if (inv) {
+                    if (item.type === "出庫" || item.type === "代替出庫" || item.type === "ダメージ") {
+                        inv.qty -= diff;
+                    } else if (item.type === "入庫") {
+                        inv.qty += diff;
+                    }
+                }
+                item.qty = parsedQty;
+                alert("確定データを修正しました。在庫数に反映されます。");
+                searchConfirmedData();
+                updateCSVData();
+            }
+        }
+
+        function deleteConfirmedItem(id) {
+            if (!confirm("本当にこの確定データを削除しますか？ (在庫数も巻き戻ります)")) return;
+            const index = confirmedDb.findIndex(d => d.id === id);
+            if (index > -1) {
+                const item = confirmedDb[index];
+                let inv = inventoryDb.find(i => i.expiry === item.expiry);
+                if (inv) {
+                    if (item.type === "出庫" || item.type === "代替出庫" || item.type === "ダメージ") {
+                        inv.qty += item.qty;
+                    } else if (item.type === "入庫") {
+                        inv.qty -= item.qty;
+                    }
+                }
+                confirmedDb.splice(index, 1);
+                alert("確定データを削除しました。");
+                searchConfirmedData();
+                updateCSVData();
+            }
+        }
+
+        function updateCSVData() {
+            const csvArea = document.getElementById('csvTextArea');
+            let csvContent = "確定日付,賞味期限,種類,数量\n";
+            confirmedDb.forEach(item => {
+                csvContent += `${item.date},${item.expiry},${item.type},${item.qty}\n`;
+            });
+            csvArea.value = csvContent;
+        }
+
+        function downloadCSV() {
+            const csvContent = document.getElementById('csvTextArea').value;
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${todayStr}_確定データ.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        updateCSVData();
+    </script>
 </body>
 </html>
