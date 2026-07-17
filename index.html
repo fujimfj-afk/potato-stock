@@ -145,10 +145,10 @@
 
         /* 列ごとの色分け設定 */
         .col-expiry { background-color: #ffffff; }
-        .col-prev { background-color: #fcfcf0; } /* 前日残: やさしいアイボリー */
-        .col-in { background-color: #f4faf4; }   /* 本日入庫: 淡いグリーン */
-        .col-out { background-color: #f3f8fc; }  /* 出荷予定: 淡いブルー */
-        .col-final { background-color: #fff9f5; } /* 計算上残: 薄いオレンジ */
+        .col-prev { background-color: #fcfcf0; } /* 前日残 */
+        .col-in { background-color: #f4faf4; }   /* 本日入庫 */
+        .col-out { background-color: #f3f8fc; }  /* 出荷予定 */
+        .col-final { background-color: #fff9f5; } /* 計算上残 */
 
         .total-row {
             background-color: #f1f1f1 !important;
@@ -288,6 +288,39 @@
 
         .btn-edit { background-color: var(--warning-orange); color: white; }
         .btn-delete { background-color: var(--danger-red); color: white; }
+
+        /* 🔒 自作パスワード入力モーダル用スタイル */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .modal-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .modal-btn {
+            width: 45%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -308,7 +341,7 @@
             <button class="menu-btn btn-green" onclick="switchScreen('screenLeader', '最終チェック')">
                 2. 最終チェック
             </button>
-            <button class="menu-btn btn-gray" onclick="tryAccessAdmin()">
+            <button class="menu-btn btn-gray" onclick="openPasswordModal()">
                 🔑 3. 管理者メニュー
             </button>
         </div>
@@ -394,6 +427,14 @@
             <button class="submit-btn" style="background-color: var(--primary-green); padding: 15px; margin-top: 10px;" onclick="commitTodayData()">
                 確認しました（一括確定して業務終了）
             </button>
+
+            <!-- 🕒 新設：確定履歴表示カード -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-title" style="border-left-color: var(--primary-gray);">本日の確定済み履歴</div>
+                <div id="leaderConfirmedList" style="font-size: 0.85rem; color: #555; max-height: 200px; overflow-y: auto;">
+                    <!-- JSで確定後のデータを動的に表示 -->
+                </div>
+            </div>
         </div>
 
         <!-- 📱 4. 管理者メニュー画面 -->
@@ -487,11 +528,23 @@
 
     </div>
 
+    <!-- 🔒 自作パスワード入力モーダルウインドウ -->
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-box">
+            <label style="display:block; margin-bottom:12px; font-weight:bold; font-size:0.95rem;">管理者パスワードを入力してください</label>
+            <input type="password" id="modalPasswordInput" style="text-align:center; letter-spacing: 5px;" placeholder="****">
+            <div class="modal-btns">
+                <button class="modal-btn" style="background:#6c757d; color:white;" onclick="closePasswordModal()">キャンセル</button>
+                <button class="modal-btn" style="background:#007bff; color:white;" onclick="submitPasswordModal()">認証</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript ロジック -->
     <script>
         const todayStr = "2026-07-16";
 
-        // セキュリティ用：パスワード（1234）の簡易Base64ハッシュ表現（生パスワード露出防止）
+        // セキュリティ用：パスワード（1234）の簡易ハッシュ（生文字隠し）
         const secureKey = "MTIzNA=="; 
 
         let inventoryDb = [
@@ -514,13 +567,21 @@
 
         const screenHistory = [];
 
-        // 管理者画面アクセス時のセキュリティ認証
-        function tryAccessAdmin() {
-            const pin = prompt("パスワードを入力してください：");
-            if (pin === null) return; // キャンセル時
+        // モーダルの制御関数
+        function openPasswordModal() {
+            document.getElementById('modalPasswordInput').value = '';
+            document.getElementById('passwordModal').style.display = 'flex';
+            document.getElementById('modalPasswordInput').focus();
+        }
 
-            // 入力値を簡易検証（Base64変換して照合）
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+        }
+
+        function submitPasswordModal() {
+            const pin = document.getElementById('modalPasswordInput').value;
             if (btoa(pin) === secureKey) {
+                closePasswordModal();
                 switchScreen('screenAdmin', '管理者メニュー');
             } else {
                 alert("パスワードが違います。アクセスできません。");
@@ -560,7 +621,7 @@
             }
         });
 
-        // YYYY-MM-DD の日付文字列を YYYY/M/D の形にするヘルパー
+        // 日付を YYYY/M/D 形式にするヘルパー
         function formatExpiryDate(dateStr) {
             if (!dateStr) return "";
             const parts = dateStr.split('-');
@@ -612,8 +673,10 @@
 
             let totalIn = dailyTx.in.reduce((acc, cur) => acc + cur.qty, 0);
             let totalOut = dailyTx.out.reduce((acc, cur) => acc + cur.qty, 0);
+            
+            // 出荷予定のマイナス表示をカット
             document.getElementById('whTotalIn').textContent = totalIn;
-            document.getElementById('whTotalOut').textContent = "-" + totalOut;
+            document.getElementById('whTotalOut').textContent = totalOut;
 
             const tbody = document.getElementById('whTableBody');
             tbody.innerHTML = '';
@@ -629,26 +692,26 @@
 
                 const tr = document.createElement('tr');
                 const isOldestLabel = (index === 0) ? '<br><span style="font-size:0.7rem;color:var(--danger-red);font-weight:bold;">【最古】</span>' : '';
-                
-                // 表示日付を YYYY/M/D 形式へ変更
                 const formattedDate = formatExpiryDate(expiry);
 
+                // 出荷予定列のマイナス表記をカット
                 tr.innerHTML = `
                     <td class="col-expiry"><strong>${formattedDate}</strong>${isOldestLabel}</td>
                     <td class="col-prev">${data.prev}</td>
                     <td class="col-in">${data.in}</td>
-                    <td class="col-out">${data.out > 0 ? '-' + data.out : '0'}</td>
+                    <td class="col-out">${data.out > 0 ? data.out : '0'}</td>
                     <td class="col-final" style="font-weight:bold; color:${data.final < 0 ? 'var(--danger-red)' : 'inherit'}">${data.final}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
+            // フッター合計行の出荷予定のマイナス表記をカット
             const tfoot = document.getElementById('whTableFoot');
             tfoot.innerHTML = `
                 <td>合 計</td>
                 <td>${sumPrev}</td>
                 <td>${sumIn}</td>
-                <td>${sumOut > 0 ? '-' + sumOut : '0'}</td>
+                <td>${sumOut > 0 ? sumOut : '0'}</td>
                 <td>${sumFinal}</td>
             `;
 
@@ -659,7 +722,6 @@
 
             sortedExpiries.forEach(expiry => {
                 const physicalStock = stock[expiry].prev + stock[expiry].in;
-                // 日付のみでドロップダウンを表示
                 if (physicalStock > 0) {
                     dmgSelect.innerHTML += `<option value="${expiry}">${expiry}</option>`;
                 }
@@ -686,13 +748,7 @@
             const qty = parseInt(document.getElementById('damageQty').value);
             const altExpiry = document.getElementById('alternativeExpiry').value;
 
-            // 「同じ賞味期限は指定できない」という制限を撤廃
-            dailyTx.damage.push({
-                damageExpiry: expiry,
-                qty: qty,
-                altExpiry: altExpiry
-            });
-
+            dailyTx.damage.push({ damageExpiry: expiry, qty: qty, altExpiry: altExpiry });
             alert("ダメージ報告と代替対応を登録しました。最終チェックで一括確定してください。");
             updateWarehouseScreen();
         }
@@ -706,7 +762,7 @@
 
             if (dailyTx.damage.length > 0) {
                 alertCard.style.display = 'block';
-                let alertDetails = dailyTx.damage.map(d => `・不足分(${d.qty}) ──➔ ${d.altExpiry} から代替出庫 済み`).join('<br>');
+                let alertDetails = dailyTx.damage.map(d => `・不足分(${d.qty}) ──➔ ${formatExpiryDate(d.altExpiry)} から代替出庫 済み`).join('<br>');
                 altText.innerHTML = alertDetails;
             } else {
                 alertCard.style.display = 'none';
@@ -715,7 +771,7 @@
             dailyTx.out.forEach(tx => {
                 listContainer.innerHTML += `
                     <div class="queue-item">
-                        <span>${tx.expiry} 出庫予定 ${tx.qty}</span>
+                        <span>${formatExpiryDate(tx.expiry)} 出庫予定 ${tx.qty}</span>
                     </div>
                 `;
             });
@@ -723,18 +779,36 @@
             dailyTx.damage.forEach(tx => {
                 listContainer.innerHTML += `
                     <div class="queue-item">
-                        <span>${tx.damageExpiry} ダメージ ${tx.qty}</span>
+                        <span>${formatExpiryDate(tx.damageExpiry)} ダメージ ${tx.qty}</span>
                     </div>
                 `;
                 listContainer.innerHTML += `
                     <div class="queue-item">
-                        <span>${tx.altExpiry} 代替出庫 ${tx.qty}</span>
+                        <span>${formatExpiryDate(tx.altExpiry)} 代替出庫 ${tx.qty}</span>
                     </div>
                 `;
             });
 
             if (dailyTx.out.length === 0 && dailyTx.damage.length === 0) {
                 listContainer.innerHTML = '<p style="text-align:center;color:#666;font-size:0.9rem;padding:20px;">現在、確定待ちのデータはありません。</p>';
+            }
+
+            // 🕒 本日の確定済み履歴の表示更新
+            const historyContainer = document.getElementById('leaderConfirmedList');
+            historyContainer.innerHTML = '';
+            
+            const todaysHistory = confirmedDb.filter(d => d.date === todayStr);
+            if (todaysHistory.length === 0) {
+                historyContainer.innerHTML = '<p style="text-align:center;color:#999;padding:10px;">本日一括確定された履歴はまだありません。</p>';
+            } else {
+                todaysHistory.forEach(item => {
+                    historyContainer.innerHTML += `
+                        <div style="padding: 6px 0; border-bottom: 1px dashed #eee; display:flex; justify-content:space-between;">
+                            <span>🟢 ${formatExpiryDate(item.expiry)} [${item.type}]</span>
+                            <span style="font-weight:bold;">${item.qty} ケース</span>
+                        </div>
+                    `;
+                });
             }
         }
 
@@ -779,7 +853,8 @@
 
             dailyTx = { in: [], out: [], damage: [], adjust: [] };
 
-            alert("本日のすべてのデータを一括確定し、業務を終了しました。");
+            alert("本日のすべてのデータを一括確定しました。履歴に追加されます。");
+            updateLeaderScreen(); // 画面を更新して即座に履歴に反映
             switchScreen('screenMenu', 'ポテト在庫システム');
             updateCSVData();
         }
@@ -893,7 +968,7 @@
                 filtered.forEach(item => {
                     resultList.innerHTML += `
                         <div class="data-item">
-                            <span>${item.expiry} | ${item.type} | ${item.qty}</span>
+                            <span>${formatExpiryDate(item.expiry)} | ${item.type} | ${item.qty}</span>
                             <div class="item-actions">
                                 <button class="btn-edit" onclick="editConfirmedItem('${item.id}')">修正</button>
                                 <button class="btn-delete" onclick="deleteConfirmedItem('${item.id}')">削除</button>
@@ -909,7 +984,7 @@
             const item = confirmedDb.find(d => d.id === id);
             if (!item) return;
 
-            const newQty = prompt(`${item.expiry}の${item.type}数量を修正します。新しい数量を入力してください：`, item.qty);
+            const newQty = prompt(`${formatExpiryDate(item.expiry)}の${item.type}数量を修正します。新しい数量を入力してください：`, item.qty);
             if (newQty !== null && !isNaN(newQty)) {
                 const parsedQty = parseInt(newQty);
                 let diff = parsedQty - item.qty;
